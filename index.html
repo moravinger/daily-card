@@ -169,6 +169,34 @@
         background: rgba(255, 255, 255, 0.1);
         border-radius: 4px;
       }
+
+      #admin-toggle-container {
+        display: none; /* Скрыто по умолчанию */
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 1001;
+      }
+
+      #admin-toggle-button {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: #007AFF;
+        border: none;
+        font-size: 24px;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease-in-out;
+      }
+
+      #admin-toggle-button:hover {
+        transform: scale(1.05);
+      }
     </style>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -215,6 +243,10 @@
         <button type="submit">Загрузить карточку</button>
       </form>
       <div id="upload-status"></div>
+    </div>
+
+    <div id="admin-toggle-container">
+      <button id="admin-toggle-button">⚙️</button>
     </div>
 
     <script type="module" src="./src/app.js"></script>

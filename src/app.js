@@ -56,8 +56,19 @@ function initApp() {
   // Показываем админ-панель, если пользователь админ
   if (isAdmin()) {
     const adminPanel = document.getElementById('admin-panel');
-    if (adminPanel) {
-      adminPanel.classList.add('visible');
+    const toggleContainer = document.getElementById('admin-toggle-container');
+    const toggleButton = document.getElementById('admin-toggle-button');
+
+    if (adminPanel && toggleContainer && toggleButton) {
+      // Показываем кнопку для открытия админки
+      toggleContainer.style.display = 'block';
+
+      // Добавляем обработчик клика
+      toggleButton.addEventListener('click', () => {
+        adminPanel.classList.toggle('visible');
+      });
+
+      // Инициализируем логику формы внутри панели
       initAdminPanel();
       setMinDate();
     }
