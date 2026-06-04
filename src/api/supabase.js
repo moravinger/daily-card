@@ -16,14 +16,14 @@ export async function getCardByDate(date) {
       .from('cards')
       .select('*')
       .eq('publish_date', date)
-      .single();
+      .limit(1); // Запрашиваем не более 1, чтобы избежать ошибки
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = не найдена строка, это нормально
+    if (error) {
       throw error;
     }
 
-    return data || null;
+    // Возвращаем первую карточку из массива или null, если массив пуст
+    return data && data.length > 0 ? data[0] : null;
   } catch (error) {
     console.error('Error fetching card:', error);
     throw error;
@@ -85,7 +85,7 @@ export async function saveCard(date, imageUrl, caption = '') {
     const existing = await getCardByDate(date);
 
     if (existing) {
-      // Обновляем
+      // Обновляем по ID, это безопаснее
       const { data, error } = await supabase
         .from('cards')
         .update({
@@ -93,7 +93,7 @@ export async function saveCard(date, imageUrl, caption = '') {
           caption: caption,
           updated_at: new Date().toISOString(),
         })
-        .eq('publish_date', date)
+        .eq('id', existing.id)
         .select()
         .single();
 
