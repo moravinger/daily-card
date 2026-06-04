@@ -22,7 +22,6 @@ export function hideLoading() {
  * @param {string} caption
  */
 export function renderCard(imageUrl, caption = '') {
-  console.log('--- renderCard called ---');
   const cardContainer = document.getElementById('card-container');
   const cardImage = document.getElementById('card-image');
   const cardCaption = document.getElementById('card-caption');
@@ -30,21 +29,25 @@ export function renderCard(imageUrl, caption = '') {
 
   // Скрываем заглушку перед показом карточки
   if (placeholderEl) {
-    console.log('Hiding placeholder element.');
     placeholderEl.style.display = 'none';
-  } else {
-    console.error('renderCard: Placeholder element NOT found!');
   }
 
   if (cardImage && imageUrl) {
     cardImage.src = imageUrl;
     cardImage.alt = 'Daily Card';
     cardImage.style.opacity = '0';
+
     cardImage.onload = () => {
       // Анимация fade-in после загрузки
       cardImage.style.transition = 'opacity 0.8s ease-in-out';
       cardImage.style.opacity = '1';
       hapticFeedback();
+    };
+
+    // Если картинка не загрузилась (удалена из Storage и т.д.)
+    cardImage.onerror = () => {
+      console.error('Image failed to load, showing fallback:', imageUrl);
+      renderFallback();
     };
   }
 
@@ -62,7 +65,6 @@ export function renderCard(imageUrl, caption = '') {
  * @param {string} fallbackImageUrl
  */
 export function renderFallback(fallbackImageUrl = null) {
-  console.log('--- renderFallback called ---');
   const cardContainer = document.getElementById('card-container');
   const placeholderEl = document.getElementById('placeholder');
 
@@ -71,10 +73,7 @@ export function renderFallback(fallbackImageUrl = null) {
   }
 
   if (placeholderEl) {
-    console.log('Placeholder element found. Setting display to flex.');
     placeholderEl.style.display = 'flex';
-  } else {
-    console.error('renderFallback: Placeholder element NOT found!');
   }
 
   if (fallbackImageUrl) {
