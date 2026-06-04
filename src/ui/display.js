@@ -25,6 +25,12 @@ export function renderCard(imageUrl, caption = '') {
   const cardContainer = document.getElementById('card-container');
   const cardImage = document.getElementById('card-image');
   const cardCaption = document.getElementById('card-caption');
+  const placeholderEl = document.getElementById('placeholder');
+
+  // Скрываем заглушку перед показом карточки
+  if (placeholderEl) {
+    placeholderEl.style.display = 'none';
+  }
 
   if (cardImage && imageUrl) {
     cardImage.src = imageUrl;
@@ -88,10 +94,7 @@ export function renderError(message) {
  */
 export function clearUI() {
   const errorEl = document.getElementById('error');
-  const placeholderEl = document.getElementById('placeholder');
-  const cardContainer = document.getElementById('card-container');
-
   if (errorEl) errorEl.style.display = 'none';
-  if (placeholderEl) placeholderEl.style.display = 'none';
-  if (cardContainer) cardContainer.style.display = 'none';
+  // Показываем заглушку по умолчанию при каждой очистке
+  renderFallback();
 }
