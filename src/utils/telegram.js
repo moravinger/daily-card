@@ -12,22 +12,13 @@ export function initTelegramWebApp() {
 }
 
 /**
- * Получить User ID из Telegram. В режиме разработки имитирует админа.
+ * Получить User ID из Telegram
  * @returns {number|null}
  */
 export function getUserId() {
-  // В настоящем приложении Telegram
-  if (window.Telegram?.WebApp?.initDataUnsafe?.user?.id) {
-    return window.Telegram.WebApp.initDataUnsafe.user.id;
+  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initDataUnsafe) {
+    return window.Telegram.WebApp.initDataUnsafe.user?.id || null;
   }
-
-  // Для локальной разработки в браузере, если VITE_ADMIN_ID задан.
-  // Vite заменяет import.meta.env.DEV на `true` в режиме `npm run dev`
-  if (import.meta.env.DEV && import.meta.env.VITE_ADMIN_ID) {
-    console.warn('DEV MODE: Имитируем ID администратора. Админ-панель должна быть видна.');
-    return parseInt(import.meta.env.VITE_ADMIN_ID, 10);
-  }
-
   return null;
 }
 
@@ -37,7 +28,7 @@ export function getUserId() {
  */
 export function isAdmin() {
   const userId = getUserId();
-  const adminId = parseInt(import.meta.env.VITE_ADMIN_ID, 10);
+  const adminId = window.CONFIG?.ADMIN_ID || 0;
   return userId === adminId;
 }
 
@@ -51,7 +42,7 @@ export function hapticFeedback() {
 }
 
 /**
- * Показать уведомление (toast)
+ * Показать уведомление (alert)
  * @param {string} message
  */
 export function showAlert(message) {
