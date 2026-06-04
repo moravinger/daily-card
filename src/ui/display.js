@@ -88,8 +88,10 @@ export function renderError(message) {
  */
 export function clearUI() {
   const errorEl = document.getElementById('error');
-  if (errorEl) errorEl.style.display = 'none';
+  const placeholderEl = document.getElementById('placeholder');
+  const cardContainer = document.getElementById('card-container');
 
-  renderFallback();
-  hideLoading();
+  if (errorEl) errorEl.style.display = 'none';
+  if (placeholderEl) placeholderEl.style.display = 'none';
+  if (cardContainer) cardContainer.style.display = 'none';
 }
