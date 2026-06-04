@@ -171,6 +171,7 @@
       }
     </style>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   </head>
   <body>
     <div id="app">
@@ -202,6 +203,18 @@
       <div id="upload-status"></div>
     </div>
 
-    <script type="module" src="./src/main.js"></script>
+    <script type="module">
+      // Инициализируем Supabase из CDN
+      const SUPABASE_URL = 'https://pibalfitreacyjfamhnq.supabase.co';
+      const SUPABASE_ANON_KEY = 'sb_publishable_-k5oZbJ3McpSo-qCaGPg7w_QSaJ_mdt';
+      
+      window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      import('./src/main.js').catch(err => {
+        console.error('Failed to load main.js:', err);
+        document.getElementById('error').textContent = 'Ошибка загрузки приложения';
+        document.getElementById('error').style.display = 'block';
+      });
+    </script>
   </body>
 </html>

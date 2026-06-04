@@ -1,9 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Supabase инициализируется через CDN в HTML
+const supabase = window.supabase;
 
 /**
  * Получить карточку по дате (UTC)
@@ -16,14 +12,13 @@ export async function getCardByDate(date) {
       .from('cards')
       .select('*')
       .eq('publish_date', date)
-      .limit(1); // Запрашиваем не более 1, чтобы избежать ошибки
+      .single();
 
-    if (error) {
+    if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
-    // Возвращаем первую карточку из массива или null, если массив пуст
-    return data && data.length > 0 ? data[0] : null;
+    return data || null;
   } catch (error) {
     console.error('Error fetching card:', error);
     throw error;
@@ -38,7 +33,6 @@ export async function getCardByDate(date) {
  */
 export async function uploadCardImage(file, date) {
   try {
-    // Валидация
     if (file.size > 5 * 1024 * 1024) {
       throw new Error('Файл слишком большой (максимум 5 МБ)');
     }
@@ -47,20 +41,17 @@ export async function uploadCardImage(file, date) {
       throw new Error('Это не изображение');
     }
 
-    // Генерируем имя файла: card_YYYY-MM-DD.jpg
     const ext = file.name.split('.').pop() || 'jpg';
     const fileName = `card_${date}.${ext}`;
 
-    // Загружаем в Storage
     const { data, error } = await supabase.storage
       .from('card-images')
       .upload(fileName, file, {
-        upsert: true, // перезаписать, если существует
+        upsert: true,
       });
 
     if (error) throw error;
 
-    // Получаем публичный URL
     const { data: publicUrlData } = supabase.storage
       .from('card-images')
       .getPublicUrl(fileName);
@@ -81,11 +72,9 @@ export async function uploadCardImage(file, date) {
  */
 export async function saveCard(date, imageUrl, caption = '') {
   try {
-    // Проверяем, существует ли уже карточка на эту дату
     const existing = await getCardByDate(date);
 
     if (existing) {
-      // Обновляем по ID, это безопаснее
       const { data, error } = await supabase
         .from('cards')
         .update({
@@ -93,14 +82,13 @@ export async function saveCard(date, imageUrl, caption = '') {
           caption: caption,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', existing.id)
+        .eq('publish_date', date)
         .select()
         .single();
 
       if (error) throw error;
       return data;
     } else {
-      // Создаём новую
       const { data, error } = await supabase
         .from('cards')
         .insert([
