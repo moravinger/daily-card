@@ -89,12 +89,3 @@ export function renderError(message) {
   }
 }
 
-/**
- * Очистить состояние UI
- */
-export function clearUI() {
-  const errorEl = document.getElementById('error');
-  if (errorEl) errorEl.style.display = 'none';
-  // Показываем заглушку по умолчанию при каждой очистке
-  renderFallback();
-}

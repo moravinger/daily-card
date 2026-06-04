@@ -1,6 +1,6 @@
 import { initTelegramWebApp, getUserId, isAdmin } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
-import { showLoading, hideLoading, renderCard, renderFallback, renderError, clearUI } from './ui/display.js';
+import { showLoading, hideLoading, renderCard, renderFallback, renderError } from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
 
 /**
@@ -21,7 +21,6 @@ function getTodayUTC() {
 async function loadCard() {
   try {
     showLoading();
-    clearUI();
 
     const today = getTodayUTC();
     const card = await getCardByDate(today);
