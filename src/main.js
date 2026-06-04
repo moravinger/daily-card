@@ -1,4 +1,3 @@
-import './app.css';
 import { initTelegramWebApp, getUserId, isAdmin } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
 import { showLoading, hideLoading, renderCard, renderFallback, renderError, clearUI } from './ui/display.js';
