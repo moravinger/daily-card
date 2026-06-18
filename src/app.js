@@ -1,4 +1,4 @@
-import { initTelegramWebApp, getUserId, isAdmin } from './utils/telegram.js';
+import { initTelegramWebApp, getUserId, isAdmin, tgVersionAtLeast } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
 import { showLoading, hideLoading, renderCard, renderFallback, renderError } from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
@@ -45,7 +45,7 @@ async function loadCard() {
 function initApp() {
   // Инициализируем Telegram Web App
   const tg = initTelegramWebApp();
-  if (tg) {
+  if (tg && tgVersionAtLeast('6.1')) {
     tg.setHeaderColor('#0d0d0d');
   }
 

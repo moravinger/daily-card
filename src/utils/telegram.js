@@ -1,5 +1,18 @@
 import { CONFIG } from '../config.js'
 
+export function tgVersionAtLeast(version) {
+  if (!window.Telegram?.WebApp?.version) return false
+  const parts = window.Telegram.WebApp.version.split('.').map(Number)
+  const target = version.split('.').map(Number)
+  for (let i = 0; i < Math.max(parts.length, target.length); i++) {
+    const a = parts[i] || 0
+    const b = target[i] || 0
+    if (a > b) return true
+    if (a < b) return false
+  }
+  return true
+}
+
 /**
  * Инициализировать Telegram Web App
  */
@@ -38,7 +51,7 @@ export function isAdmin() {
  * Вибрация (haptic feedback)
  */
 export function hapticFeedback() {
-  if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.HapticFeedback) {
+  if (tgVersionAtLeast('6.1') && window.Telegram?.WebApp?.HapticFeedback) {
     window.Telegram.WebApp.HapticFeedback.impactOccurred('light');
   }
 }
