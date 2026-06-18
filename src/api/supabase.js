@@ -1,78 +1,59 @@
-// Supabase инициализируется через CDN в HTML
-const supabase = window.supabase;
+import { supabase } from '../config.js'
 
-/**
- * Получить карточку по дате (UTC)
- * @param {string} date - дата в формате YYYY-MM-DD
- * @returns {Promise<object>} - карточка или null
- */
 export async function getCardByDate(date) {
   try {
     const { data, error } = await supabase
       .from('cards')
       .select('*')
       .eq('publish_date', date)
-      .single();
+      .single()
 
     if (error && error.code !== 'PGRST116') {
-      throw error;
+      throw error
     }
 
-    return data || null;
+    return data || null
   } catch (error) {
-    console.error('Error fetching card:', error);
-    throw error;
+    console.error('Error fetching card:', error)
+    throw error
   }
 }
 
-/**
- * Загрузить картинку в Storage
- * @param {File} file - файл картинки
- * @param {string} date - дата в формате YYYY-MM-DD
- * @returns {Promise<string>} - публичный URL картинки
- */
 export async function uploadCardImage(file, date) {
   try {
     if (file.size > 5 * 1024 * 1024) {
-      throw new Error('Файл слишком большой (максимум 5 МБ)');
+      throw new Error('Файл слишком большой (максимум 5 МБ)')
     }
 
     if (!file.type.startsWith('image/')) {
-      throw new Error('Это не изображение');
+      throw new Error('Это не изображение')
     }
 
-    const ext = file.name.split('.').pop() || 'jpg';
-    const fileName = `card_${date}.${ext}`;
+    const ext = file.name.split('.').pop() || 'jpg'
+    const fileName = `card_${date}.${ext}`
 
     const { data, error } = await supabase.storage
       .from('card-images')
       .upload(fileName, file, {
         upsert: true,
-      });
+      })
 
-    if (error) throw error;
+    if (error) throw error
 
     const { data: publicUrlData } = supabase.storage
       .from('card-images')
-      .getPublicUrl(fileName);
+      .getPublicUrl(fileName)
 
-    return publicUrlData.publicUrl;
+    return publicUrlData.publicUrl
   } catch (error) {
-    console.error('Error uploading image:', error);
-    throw error;
+    console.error('Error uploading image:', error)
+    throw error
   }
 }
 
-/**
- * Создать или обновить карточку
- * @param {string} date - дата в формате YYYY-MM-DD
- * @param {string} imageUrl - URL картинки
- * @param {string} caption - подпись (опционально)
- * @returns {Promise<object>} - созданная/обновленная карточка
- */
 export async function saveCard(date, imageUrl, caption = '') {
   try {
-    const existing = await getCardByDate(date);
+    const existing = await getCardByDate(date)
 
     if (existing) {
       const { data, error } = await supabase
@@ -84,10 +65,10 @@ export async function saveCard(date, imageUrl, caption = '') {
         })
         .eq('publish_date', date)
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
-      return data;
+      if (error) throw error
+      return data
     } else {
       const { data, error } = await supabase
         .from('cards')
@@ -99,13 +80,13 @@ export async function saveCard(date, imageUrl, caption = '') {
           },
         ])
         .select()
-        .single();
+        .single()
 
-      if (error) throw error;
-      return data;
+      if (error) throw error
+      return data
     }
   } catch (error) {
-    console.error('Error saving card:', error);
-    throw error;
+    console.error('Error saving card:', error)
+    throw error
   }
 }

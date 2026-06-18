@@ -1,3 +1,5 @@
+import { CONFIG } from '../config.js'
+
 /**
  * Инициализировать Telegram Web App
  */
@@ -28,7 +30,7 @@ export function getUserId() {
  */
 export function isAdmin() {
   const userId = getUserId();
-  const adminId = window.CONFIG?.ADMIN_ID || 0;
+  const adminId = CONFIG.ADMIN_ID || 0;
   return userId === adminId;
 }
 
