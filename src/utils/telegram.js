@@ -30,7 +30,7 @@ export function getUserId() {
  */
 export function isAdmin() {
   const userId = getUserId();
-  const adminId = CONFIG.ADMIN_ID || 0;
+  const adminId = CONFIG.ADMIN_ID;
   return userId === adminId;
 }
 

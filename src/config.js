@@ -1,10 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
-
 export const CONFIG = {
-  ADMIN_ID: Number(import.meta.env.VITE_ADMIN_ID),
+  ADMIN_ID: Number(window.CONFIG?.ADMIN_ID ?? 0),
 }
 
-export const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-)
+export const supabase = window.supabase
