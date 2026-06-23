@@ -22,7 +22,6 @@ async function handleFormSubmit(e) {
 
   const fileInput = document.getElementById('file-input')
   const dateInput = document.getElementById('date-input')
-  const captionInput = document.getElementById('caption-input')
   const statusEl = document.getElementById('upload-status')
 
   if (!fileInput.files[0]) {
@@ -43,7 +42,6 @@ async function handleFormSubmit(e) {
   }
 
   const date = dateInput.value
-  const caption = captionInput?.value || ''
   const initData = getInitData()
 
   if (!initData) {
@@ -73,7 +71,7 @@ async function handleFormSubmit(e) {
       {
         method: 'POST',
         headers: { 'apikey': window.CONFIG?.SUPABASE_ANON_KEY || '' },
-        body: JSON.stringify({ date, caption, imageUrl: publicUrl, initData }),
+        body: JSON.stringify({ date, imageUrl: publicUrl, initData }),
       },
     )
 
@@ -88,7 +86,6 @@ async function handleFormSubmit(e) {
 
     fileInput.value = ''
     dateInput.value = ''
-    if (captionInput) captionInput.value = ''
 
     setTimeout(() => { window.location.reload() }, 1000)
   } catch (error) {

@@ -26,7 +26,7 @@ export async function loadCard() {
     const card = await getCardByDate(today);
 
     if (card && card.image_url) {
-      renderCard(card.image_url, card.caption);
+      renderCard(card.image_url);
     } else {
       renderFallback();
     }

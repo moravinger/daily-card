@@ -21,10 +21,9 @@ export function hideLoading() {
  * @param {string} imageUrl
  * @param {string} caption
  */
-export function renderCard(imageUrl, caption = '') {
+export function renderCard(imageUrl) {
   const cardContainer = document.getElementById('card-container');
   const cardImage = document.getElementById('card-image');
-  const cardCaption = document.getElementById('card-caption');
   const placeholderEl = document.getElementById('placeholder');
 
   if (placeholderEl) {
@@ -37,21 +36,15 @@ export function renderCard(imageUrl, caption = '') {
     cardImage.style.opacity = '0';
 
     cardImage.onload = () => {
-      // Анимация fade-in после загрузки
       cardImage.style.transition = 'opacity 0.8s ease-in-out';
       cardImage.style.opacity = '1';
       hapticFeedback();
     };
 
-    // Если картинка не загрузилась (удалена из Storage и т.д.)
     cardImage.onerror = () => {
       console.error('Image failed to load, showing fallback:', imageUrl);
       renderFallback();
     };
-  }
-
-  if (cardCaption && caption) {
-    cardCaption.textContent = caption;
   }
 
   if (cardContainer) {

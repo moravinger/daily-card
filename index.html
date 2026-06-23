@@ -76,13 +76,6 @@
         transition: opacity 0.8s ease-in-out;
       }
 
-      #card-caption {
-        margin-top: 12px;
-        text-align: center;
-        font-size: 14px;
-        color: #aaa;
-      }
-
       #placeholder {
         display: none;
         flex-direction: column;
@@ -220,7 +213,6 @@
 
       <div id="card-container" style="display: none">
         <img id="card-image" alt="Daily Card" />
-        <p id="card-caption"></p>
       </div>
 
       <div id="placeholder" style="display: none">
@@ -236,7 +228,6 @@
       <form id="upload-form">
         <input type="file" id="file-input" accept="image/*" required />
         <input type="date" id="date-input" required />
-        <input type="text" id="caption-input" placeholder="Подпись (опционально)" />
         <button type="submit">Загрузить карточку</button>
       </form>
       <div id="upload-status"></div>
