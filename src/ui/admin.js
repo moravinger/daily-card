@@ -72,14 +72,13 @@ async function handleFormSubmit(e) {
       'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card',
       {
         method: 'POST',
-        headers: {
-          'apikey': window.CONFIG?.SUPABASE_ANON_KEY || '',
-          'Content-Type': 'application/json',
-        },
+        headers: { 'apikey': window.CONFIG?.SUPABASE_ANON_KEY || '' },
         body: JSON.stringify({ date, caption, imageUrl: publicUrl, initData }),
       },
     )
-    const result = await res.json()
+    const text = await res.text()
+    let result
+    try { result = JSON.parse(text) } catch { throw new Error(`Сервер: ${text.substring(0, 200)}`) }
 
     if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
 
