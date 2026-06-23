@@ -1,10 +1,5 @@
 import { showAlert } from '../utils/telegram.js';
-
-const EDGE_FUNCTION_URL = 'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card'
-
-function getAnonKey() {
-  return window.CONFIG?.SUPABASE_ANON_KEY || ''
-}
+import { supabase } from '../config.js';
 
 function getInitData() {
   return window.Telegram?.WebApp?.initData || ''
@@ -61,20 +56,24 @@ async function handleFormSubmit(e) {
   statusEl.style.color = '#999'
 
   try {
-    const formData = new FormData()
-    formData.append('file', file)
-    formData.append('date', date)
-    formData.append('caption', caption)
-    formData.append('initData', initData)
+    const ext = file.name.split('.').pop() || 'jpg'
+    const fileName = `card_${date}.${ext}`
 
-    const res = await fetch(EDGE_FUNCTION_URL, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${getAnonKey()}` },
-      body: formData,
+    const { error: uploadErr } = await supabase.storage
+      .from('card-images')
+      .upload(fileName, file, { upsert: true })
+    if (uploadErr) throw uploadErr
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('card-images')
+      .getPublicUrl(fileName)
+
+    const { data: fnData, error: fnError } = await supabase.functions.invoke('upload-card', {
+      body: { date, caption, imageUrl: publicUrl, initData },
     })
-    const result = await res.json()
 
-    if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
+    if (fnError) throw new Error(fnError.message || 'Ошибка загрузки')
+    if (!fnData?.ok) throw new Error(fnData?.error || 'Ошибка загрузки')
 
     statusEl.textContent = '✅ Карточка загружена!'
     statusEl.style.color = '#4CAF50'
