@@ -56,17 +56,24 @@ async function handleFormSubmit(e) {
   statusEl.style.color = '#999'
 
   try {
+    statusEl.textContent = '⏳ Загружаю картинку в Storage...'
+    statusEl.style.color = '#999'
+
     const ext = file.name.split('.').pop() || 'jpg'
     const fileName = `card_${date}.${ext}`
 
     const { error: uploadErr } = await supabase.storage
       .from('card-images')
       .upload(fileName, file, { upsert: true })
-    if (uploadErr) throw uploadErr
+    if (uploadErr) throw new Error(`Storage: ${uploadErr.message}`)
+
+    statusEl.textContent = '⏳ Получаю ссылку...'
 
     const { data: { publicUrl } } = supabase.storage
       .from('card-images')
       .getPublicUrl(fileName)
+
+    statusEl.textContent = '⏳ Вызываю Edge Function...'
 
     const res = await fetch(
       'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card',
@@ -76,6 +83,9 @@ async function handleFormSubmit(e) {
         body: JSON.stringify({ date, caption, imageUrl: publicUrl, initData }),
       },
     )
+
+    statusEl.textContent = `⏳ Ответ: ${res.status} ${res.statusText}...`
+
     const text = await res.text()
     let result
     try { result = JSON.parse(text) } catch { throw new Error(`Сервер: ${text.substring(0, 200)}`) }
