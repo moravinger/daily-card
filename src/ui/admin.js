@@ -60,11 +60,11 @@ async function handleFormSubmit(e) {
     statusEl.style.color = '#999'
 
     const ext = file.name.split('.').pop() || 'jpg'
-    const fileName = `card_${date}.${ext}`
+    const fileName = `card_${date}_${Date.now()}.${ext}`
 
     const { error: uploadErr } = await supabase.storage
       .from('card-images')
-      .upload(fileName, file, { upsert: true })
+      .upload(fileName, file, { upsert: false })
     if (uploadErr) throw new Error(`Storage: ${uploadErr.message}`)
 
     statusEl.textContent = '⏳ Получаю ссылку...'
