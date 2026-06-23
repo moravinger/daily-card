@@ -1,91 +1,91 @@
-import { uploadCardImage, saveCard } from '../api/supabase.js';
 import { showAlert } from '../utils/telegram.js';
 
-/**
- * Инициализировать админ-панель
- */
-export function initAdminPanel() {
-  const adminPanel = document.getElementById('admin-panel');
-  if (!adminPanel) return;
+const EDGE_FUNCTION_URL = 'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card'
 
-  const uploadForm = document.getElementById('upload-form');
-  if (!uploadForm) return;
-
-  uploadForm.addEventListener('submit', handleFormSubmit);
+function getInitData() {
+  return window.Telegram?.WebApp?.initData || ''
 }
 
-/**
- * Обработчик отправки формы
- */
-async function handleFormSubmit(e) {
-  e.preventDefault();
+function getFileValidationError(file) {
+  if (file.size > 5 * 1024 * 1024) return 'Файл слишком большой (максимум 5 МБ)'
+  if (!file.type.startsWith('image/')) return 'Это не изображение'
+  return null
+}
 
-  const fileInput = document.getElementById('file-input');
-  const dateInput = document.getElementById('date-input');
-  const captionInput = document.getElementById('caption-input');
-  const statusEl = document.getElementById('upload-status');
+export function initAdminPanel() {
+  const uploadForm = document.getElementById('upload-form')
+  if (!uploadForm) return
+  uploadForm.addEventListener('submit', handleFormSubmit)
+}
+
+async function handleFormSubmit(e) {
+  e.preventDefault()
+
+  const fileInput = document.getElementById('file-input')
+  const dateInput = document.getElementById('date-input')
+  const captionInput = document.getElementById('caption-input')
+  const statusEl = document.getElementById('upload-status')
 
   if (!fileInput.files[0]) {
-    showAlert('Выбери картинку');
-    return;
+    showAlert('Выбери картинку')
+    return
   }
 
   if (!dateInput.value) {
-    showAlert('Выбери дату');
-    return;
+    showAlert('Выбери дату')
+    return
   }
 
-  const file = fileInput.files[0];
-  const date = dateInput.value;
-  const caption = captionInput?.value || '';
-
-  // Показываем статус
-  if (statusEl) {
-    statusEl.textContent = 'Загружаю...';
-    statusEl.style.display = 'block';
-    statusEl.style.color = '#999';
+  const file = fileInput.files[0]
+  const validationError = getFileValidationError(file)
+  if (validationError) {
+    showAlert(validationError)
+    return
   }
+
+  const date = dateInput.value
+  const caption = captionInput?.value || ''
+  const initData = getInitData()
+
+  if (!initData) {
+    showAlert('Ошибка: нет данных авторизации Telegram')
+    return
+  }
+
+  statusEl.textContent = 'Загружаю...'
+  statusEl.style.display = 'block'
+  statusEl.style.color = '#999'
 
   try {
-    // 1. Загружаем картинку
-    const imageUrl = await uploadCardImage(file, date);
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('date', date)
+    formData.append('caption', caption)
+    formData.append('initData', initData)
 
-    // 2. Сохраняем в БД
-    await saveCard(date, imageUrl, caption);
+    const res = await fetch(EDGE_FUNCTION_URL, { method: 'POST', body: formData })
+    const result = await res.json()
 
-    // Успех!
-    if (statusEl) {
-      statusEl.textContent = '✅ Карточка загружена!';
-      statusEl.style.color = '#4CAF50';
-    }
+    if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
 
-    // Очищаем форму
-    fileInput.value = '';
-    dateInput.value = '';
-    if (captionInput) captionInput.value = '';
+    statusEl.textContent = '✅ Карточка загружена!'
+    statusEl.style.color = '#4CAF50'
 
-    // Скрываем статус через 3 секунды
-    setTimeout(() => {
-      if (statusEl) statusEl.style.display = 'none';
-    }, 3000);
+    fileInput.value = ''
+    dateInput.value = ''
+    if (captionInput) captionInput.value = ''
+
+    setTimeout(() => { statusEl.style.display = 'none' }, 3000)
   } catch (error) {
-    console.error('Upload error:', error);
-    if (statusEl) {
-      statusEl.textContent = `❌ Ошибка: ${error.message}`;
-      statusEl.style.color = '#f44336';
-    }
+    console.error('Upload error:', error)
+    statusEl.textContent = `❌ Ошибка: ${error.message}`
+    statusEl.style.color = '#f44336'
   }
 }
 
-/**
- * Установить минимальную дату (сегодня в UTC)
- */
 export function setMinDate() {
-  const dateInput = document.getElementById('date-input');
-  if (!dateInput) return;
-
-  const today = new Date();
-  const utcDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000);
-  const dateString = utcDate.toISOString().split('T')[0];
-  dateInput.min = dateString;
+  const dateInput = document.getElementById('date-input')
+  if (!dateInput) return
+  const today = new Date()
+  dateInput.min = new Date(today.getTime() - today.getTimezoneOffset() * 6e4).toISOString().split('T')[0]
 }
