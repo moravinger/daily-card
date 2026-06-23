@@ -18,7 +18,7 @@ function getTodayUTC() {
 /**
  * Загрузить и отобразить карточку
  */
-async function loadCard() {
+export async function loadCard() {
   try {
     showLoading();
 

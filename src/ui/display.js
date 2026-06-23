@@ -27,14 +27,13 @@ export function renderCard(imageUrl, caption = '') {
   const cardCaption = document.getElementById('card-caption');
   const placeholderEl = document.getElementById('placeholder');
 
-  // Скрываем заглушку перед показом карточки
   if (placeholderEl) {
     placeholderEl.style.display = 'none';
   }
 
   if (cardImage && imageUrl) {
-    cardImage.src = imageUrl;
-    cardImage.alt = 'Daily Card';
+    const cacheBuster = `?t=${Date.now()}`
+    cardImage.src = imageUrl + cacheBuster;
     cardImage.style.opacity = '0';
 
     cardImage.onload = () => {

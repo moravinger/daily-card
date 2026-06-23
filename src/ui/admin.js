@@ -99,7 +99,7 @@ async function handleFormSubmit(e) {
     dateInput.value = ''
     if (captionInput) captionInput.value = ''
 
-    setTimeout(() => { statusEl.style.display = 'none' }, 3000)
+    setTimeout(() => { window.location.reload() }, 1000)
   } catch (error) {
     console.error('Upload error:', error)
     statusEl.textContent = `❌ Ошибка: ${error.message}`
