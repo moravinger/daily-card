@@ -68,12 +68,20 @@ async function handleFormSubmit(e) {
       .from('card-images')
       .getPublicUrl(fileName)
 
-    const { data: fnData, error: fnError } = await supabase.functions.invoke('upload-card', {
-      body: { date, caption, imageUrl: publicUrl, initData },
-    })
+    const res = await fetch(
+      'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card',
+      {
+        method: 'POST',
+        headers: {
+          'apikey': window.CONFIG?.SUPABASE_ANON_KEY || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ date, caption, imageUrl: publicUrl, initData }),
+      },
+    )
+    const result = await res.json()
 
-    if (fnError) throw new Error(fnError.message || 'Ошибка загрузки')
-    if (!fnData?.ok) throw new Error(fnData?.error || 'Ошибка загрузки')
+    if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
 
     statusEl.textContent = '✅ Карточка загружена!'
     statusEl.style.color = '#4CAF50'
