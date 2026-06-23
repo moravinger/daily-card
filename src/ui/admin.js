@@ -2,6 +2,10 @@ import { showAlert } from '../utils/telegram.js';
 
 const EDGE_FUNCTION_URL = 'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card'
 
+function getAnonKey() {
+  return window.CONFIG?.SUPABASE_ANON_KEY || ''
+}
+
 function getInitData() {
   return window.Telegram?.WebApp?.initData || ''
 }
@@ -63,7 +67,11 @@ async function handleFormSubmit(e) {
     formData.append('caption', caption)
     formData.append('initData', initData)
 
-    const res = await fetch(EDGE_FUNCTION_URL, { method: 'POST', body: formData })
+    const res = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${getAnonKey()}` },
+      body: formData,
+    })
     const result = await res.json()
 
     if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
