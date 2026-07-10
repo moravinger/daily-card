@@ -46,10 +46,9 @@ export async function loadCard() {
 async function subscribeUser() {
   const userId = getUserId()
   if (!userId) return
-  try {
-    await supabase.from('subscribers').upsert({ user_id: userId }, { onConflict: 'user_id' })
-  } catch (e) {
-    console.warn('Subscribe failed:', e)
+  const { error } = await supabase.from('subscribers').insert({ user_id: userId })
+  if (error && error.code !== '23505') {
+    console.warn('Subscribe failed:', error)
   }
 }
 
