@@ -1,5 +1,6 @@
 import { initTelegramWebApp, getUserId, isAdmin, tgVersionAtLeast } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
+import { supabase } from './config.js';
 import { showLoading, hideLoading, renderCard, renderFallback, renderError } from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
 
@@ -40,16 +41,29 @@ export async function loadCard() {
 }
 
 /**
+ * Подписать пользователя на уведомления
+ */
+async function subscribeUser() {
+  const userId = getUserId()
+  if (!userId) return
+  try {
+    await supabase.from('subscribers').upsert({ user_id: userId }, { onConflict: 'user_id' })
+  } catch (e) {
+    console.warn('Subscribe failed:', e)
+  }
+}
+
+/**
  * Инициализировать приложение
  */
 function initApp() {
-  // Инициализируем Telegram Web App
   const tg = initTelegramWebApp();
   if (tg && tgVersionAtLeast('6.1')) {
     tg.setHeaderColor('#0d0d0d');
   }
 
-  // Загружаем карточку
+  subscribeUser();
+
   loadCard();
 
   // Показываем админ-панель, если пользователь админ
