@@ -17,6 +17,17 @@ export function hideLoading() {
 }
 
 /**
+ * Скрыть предыдущее сообщение об ошибке
+ */
+export function hideError() {
+  const errorEl = document.getElementById('error');
+  if (errorEl) {
+    errorEl.textContent = '';
+    errorEl.style.display = 'none';
+  }
+}
+
+/**
  * Отобразить карточку с анимацией
  * @param {string} imageUrl
  * @param {string} caption
@@ -87,4 +98,3 @@ export function renderError(message) {
     errorEl.style.display = 'block';
   }
 }
-

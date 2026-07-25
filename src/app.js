@@ -1,7 +1,14 @@
 import { initTelegramWebApp, isAdmin, tgVersionAtLeast } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
 import { supabase } from './config.js';
-import { showLoading, hideLoading, renderCard, renderFallback, renderError } from './ui/display.js';
+import {
+  showLoading,
+  hideLoading,
+  hideError,
+  renderCard,
+  renderFallback,
+  renderError,
+} from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
 
 /**
@@ -21,6 +28,7 @@ function getTodayUTC() {
  */
 export async function loadCard() {
   try {
+    hideError();
     showLoading();
 
     const today = getTodayUTC();
