@@ -109,7 +109,7 @@ export function setCardRevealed(revealed, { animate = false } = {}) {
     }
     if (title) title.textContent = 'Карточка дня';
     if (footer) footer.textContent = 'Нажми на карточку, чтобы открыть полностью';
-    hapticFeedback();
+    if (animate) hapticFeedback();
     return;
   }
 

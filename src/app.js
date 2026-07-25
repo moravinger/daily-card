@@ -23,7 +23,7 @@ import { formatCardDate, getTodayUTC } from './utils/date.js';
 
 const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 const LAST_CARD_KEY = 'daily-card:last-card:v1';
-const REVEAL_KEY_PREFIX = 'daily-card:revealed:v1:';
+const REVEAL_KEY_PREFIX = 'daily-card:revealed:v2:';
 
 let refreshTimer = null;
 let activeLoad = null;
@@ -67,26 +67,35 @@ function writeLastCard(card) {
   }
 }
 
-function hasRevealedCard(date) {
+function getRevealStorageKey(date, version) {
+  if (!date || !version) return null;
+  return `${REVEAL_KEY_PREFIX}${date}:${version}`;
+}
+
+function hasRevealedCard(date, version) {
+  const storageKey = getRevealStorageKey(date, version);
+  if (!storageKey) return false;
   try {
-    return window.localStorage.getItem(`${REVEAL_KEY_PREFIX}${date}`) === '1';
+    return window.localStorage.getItem(storageKey) === '1';
   } catch {
     return false;
   }
 }
 
-function rememberCardReveal(date) {
-  if (!date) return;
+function rememberCardReveal(date, version) {
+  const storageKey = getRevealStorageKey(date, version);
+  if (!storageKey) return;
   try {
-    window.localStorage.setItem(`${REVEAL_KEY_PREFIX}${date}`, '1');
+    window.localStorage.setItem(storageKey, '1');
   } catch {
     // The reveal still works when storage is unavailable.
   }
 }
 
-function updateCardDate(date) {
+function updateCardDate(date, { saved = false } = {}) {
   const dateEl = document.getElementById('card-date-label');
-  if (dateEl) dateEl.textContent = `Сегодня · ${formatCardDate(date)}`;
+  if (!dateEl) return;
+  dateEl.textContent = `${saved ? 'Сохранённая' : 'Сегодня'} · ${formatCardDate(date)}`;
 }
 
 async function showCachedCard() {
@@ -98,8 +107,8 @@ async function showCachedCard() {
     displayedCardVersion = cachedCard.version || cachedCard.imageUrl;
     displayedCardUrl = cachedCard.imageUrl;
     displayedCardDate = cachedCard.date;
-    updateCardDate(cachedCard.date);
-    setCardRevealed(hasRevealedCard(cachedCard.date));
+    updateCardDate(cachedCard.date, { saved: true });
+    setCardRevealed(hasRevealedCard(cachedCard.date, displayedCardVersion));
     setOfflineState(true);
     return true;
   } catch {
@@ -142,7 +151,7 @@ async function loadCardInternal() {
           version,
         });
       }
-      setCardRevealed(hasRevealedCard(today));
+      setCardRevealed(hasRevealedCard(today, displayedCardVersion));
       setOfflineState(false);
     } else if (isInitialLoad) {
       renderFallback();
@@ -165,8 +174,8 @@ async function loadCardInternal() {
 }
 
 function revealCard() {
-  if (!displayedCardDate) return;
-  rememberCardReveal(displayedCardDate);
+  if (!displayedCardDate || !displayedCardVersion) return;
+  rememberCardReveal(displayedCardDate, displayedCardVersion);
   setCardRevealed(true, { animate: true });
 }
 
