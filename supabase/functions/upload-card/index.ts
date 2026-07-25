@@ -61,7 +61,12 @@ Deno.serve(async (request) => {
       return jsonResponse(request, { error: 'Server configuration error' }, 500)
     }
 
-    const formData = await request.formData()
+    let formData: FormData
+    try {
+      formData = await request.formData()
+    } catch {
+      return jsonResponse(request, { error: 'Invalid upload data' }, 400)
+    }
     const initData = formData.get('initData')
     const publishDate = formData.get('date')
     const file = formData.get('file')
