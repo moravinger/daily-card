@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getTodayLocal, getTodayUTC } from './date.js'
+import { formatCardDate, getTodayLocal, getTodayUTC } from './date.js'
 
 describe('date helpers', () => {
   it('formats the UTC calendar day', () => {
@@ -13,5 +13,9 @@ describe('date helpers', () => {
       .split('T')[0]
 
     expect(getTodayLocal(now)).toBe(expected)
+  })
+
+  it('formats a card date without shifting the calendar day', () => {
+    expect(formatCardDate('2026-07-25')).toBe('25 июля')
   })
 })

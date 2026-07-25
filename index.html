@@ -13,100 +13,366 @@
     <link rel="shortcut icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
     <title>Daily Card</title>
     <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0a0b0d;
+        --surface: rgba(25, 27, 32, 0.82);
+        --surface-strong: #1a1c21;
+        --text: #f7f7f8;
+        --muted: #9da2ad;
+        --accent: #7c5cff;
+        --accent-strong: #6747ef;
+        --stroke: rgba(255, 255, 255, 0.1);
+      }
+
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
 
+      button {
+        font: inherit;
+      }
+
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
           Cantarell, 'Helvetica Neue', sans-serif;
-        background-color: #0d0d0d;
-        color: #fff;
-        min-height: 100dvh;
+        background: var(--bg);
+        color: var(--text);
         min-height: 100vh;
+        min-height: 100dvh;
         overflow: hidden;
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+
+      body.preview-open {
+        overflow: hidden;
+      }
+
+      #ambient-background {
+        position: fixed;
+        inset: -48px;
+        z-index: -2;
+        background-position: center;
+        background-size: cover;
+        filter: blur(48px) saturate(0.8);
+        opacity: 0.18;
+        transform: scale(1.12);
+        transition: background-image 0.5s ease;
+      }
+
+      #ambient-background::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(10, 11, 13, 0.68), var(--bg) 78%);
       }
 
       #app {
-        display: flex;
-        flex-direction: column;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+        width: min(100%, 520px);
         height: 100vh;
-        justify-content: center;
+        height: 100dvh;
+        margin: 0 auto;
+        padding:
+          max(18px, env(safe-area-inset-top, 0px))
+          16px
+          max(18px, env(safe-area-inset-bottom, 0px));
+      }
+
+      .app-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        padding: 4px 2px 16px;
+      }
+
+      .eyebrow {
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin-top: 4px;
+        font-size: clamp(25px, 7vw, 32px);
+        line-height: 1.05;
+        letter-spacing: -0.035em;
+      }
+
+      #offline-badge {
+        display: none;
         align-items: center;
-        padding: 16px;
+        gap: 6px;
+        padding: 7px 10px;
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        background: rgba(10, 11, 13, 0.5);
+        color: var(--muted);
+        font-size: 12px;
+        font-weight: 600;
+        backdrop-filter: blur(12px);
+      }
+
+      #offline-badge::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #f5a524;
+      }
+
+      .content {
+        display: flex;
+        min-height: 0;
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      #loading,
+      #card-container,
+      #placeholder {
+        width: 100%;
       }
 
       #loading {
         display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
+      }
+
+      .skeleton-card {
+        aspect-ratio: 4 / 3;
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        border-radius: 20px;
+        background: var(--surface-strong);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+      }
+
+      .skeleton-card::after {
+        content: '';
+        display: block;
+        width: 45%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        justify-content: center;
-        align-items: center;
-        z-index: 1000;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.07),
+          transparent
+        );
+        animation: shimmer 1.35s ease-in-out infinite;
+        transform: translateX(-120%);
       }
 
-      .spinner {
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        border-top: 4px solid #fff;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        animation: spin 0.8s linear infinite;
+      .skeleton-lines {
+        display: grid;
+        gap: 10px;
+        margin-top: 18px;
       }
 
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+      .skeleton-line {
+        height: 12px;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.07);
+      }
+
+      .skeleton-line:last-child {
+        width: 62%;
+      }
+
+      @keyframes shimmer {
+        to { transform: translateX(320%); }
       }
 
       #card-container {
-        width: 100%;
-        max-width: 100%;
         display: none;
       }
 
-      #card-image {
+      #card-open-button {
+        display: block;
         width: 100%;
-        max-height: 80vh;
+        overflow: hidden;
+        border: 1px solid var(--stroke);
+        border-radius: 20px;
+        background: var(--surface);
+        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.4);
+        cursor: zoom-in;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      #card-image {
+        display: block;
+        width: 100%;
+        max-height: 58vh;
+        max-height: 58dvh;
         object-fit: contain;
-        border-radius: 8px;
         opacity: 0;
-        transition: opacity 0.8s ease-in-out;
+        transition: opacity 0.5s ease-in-out, transform 0.25s ease;
+      }
+
+      #card-open-button:active #card-image {
+        transform: scale(0.99);
+      }
+
+      #card-actions {
+        display: none;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .action-button,
+      #retry-button {
+        display: inline-flex;
+        min-height: 48px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        background: rgba(27, 29, 34, 0.78);
+        color: var(--text);
+        cursor: pointer;
+        font-weight: 650;
+        backdrop-filter: blur(16px);
+        transition: transform 0.16s ease, background 0.16s ease;
+      }
+
+      .action-button:active,
+      #retry-button:active {
+        transform: scale(0.97);
+      }
+
+      .action-button.primary {
+        border-color: transparent;
+        background: var(--accent);
+      }
+
+      .action-icon {
+        font-size: 18px;
+        line-height: 1;
       }
 
       #placeholder {
         display: none;
         flex-direction: column;
-        justify-content: center;
         align-items: center;
-        gap: 16px;
+        padding: 34px 22px;
+        border: 1px solid var(--stroke);
+        border-radius: 20px;
+        background: var(--surface);
         text-align: center;
       }
 
       #fallback-image {
-        width: 100px;
-        height: 100px;
-        opacity: 0.5;
+        width: 76px;
+        height: 76px;
+        border-radius: 18px;
+        opacity: 0.62;
       }
 
       #placeholder-text {
-        font-size: 18px;
-        color: #e0e0e0;
+        margin-top: 16px;
+        color: var(--muted);
+        font-size: 15px;
       }
 
       #error {
         display: none;
-        color: #f44336;
-        font-size: 14px;
         margin-top: 16px;
         text-align: center;
+      }
+
+      #error-message {
+        color: #d4d6dc;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      #retry-button {
+        min-height: 44px;
+        margin-top: 14px;
+        padding: 0 20px;
+        background: var(--accent);
+      }
+
+      .app-footer {
+        padding-top: 14px;
+        color: #737985;
+        font-size: 12px;
+        text-align: center;
+      }
+
+      #toast {
+        position: fixed;
+        bottom: max(24px, env(safe-area-inset-bottom, 0px));
+        left: 50%;
+        z-index: 1200;
+        max-width: calc(100% - 32px);
+        padding: 11px 16px;
+        border: 1px solid var(--stroke);
+        border-radius: 999px;
+        background: rgba(30, 32, 38, 0.96);
+        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, 12px);
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        white-space: nowrap;
+      }
+
+      #toast.visible {
+        opacity: 1;
+        transform: translate(-50%, 0);
+      }
+
+      #card-preview {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        align-items: center;
+        justify-content: center;
+        padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+      }
+
+      #card-preview.visible {
+        display: flex;
+      }
+
+      #preview-backdrop {
+        position: absolute;
+        inset: 0;
+        border: 0;
+        background: rgba(0, 0, 0, 0.92);
+        cursor: zoom-out;
+      }
+
+      #preview-image {
+        position: relative;
+        z-index: 1;
+        max-width: 100%;
+        max-height: 92vh;
+        max-height: 92dvh;
+        border-radius: 12px;
+        object-fit: contain;
+      }
+
+      #preview-close-button {
+        position: absolute;
+        top: max(16px, env(safe-area-inset-top));
+        right: 16px;
+        z-index: 2;
+        width: 44px;
+        height: 44px;
+        border: 1px solid var(--stroke);
+        border-radius: 50%;
+        background: rgba(28, 29, 34, 0.86);
+        color: #fff;
+        cursor: pointer;
+        font-size: 22px;
       }
 
       #admin-panel {
@@ -120,6 +386,7 @@
         max-height: 50vh;
         overflow-y: auto;
         display: none;
+        z-index: 1000;
       }
 
       #admin-panel.visible {
@@ -204,6 +471,47 @@
       #admin-toggle-button:hover {
         transform: scale(1.05);
       }
+
+      @media (hover: hover) {
+        .action-button:hover,
+        #retry-button:hover {
+          background: #30333a;
+        }
+
+        .action-button.primary:hover,
+        #retry-button:hover {
+          background: var(--accent-strong);
+        }
+      }
+
+      @media (max-height: 660px) {
+        .app-header {
+          padding-bottom: 10px;
+        }
+
+        h1 {
+          font-size: 24px;
+        }
+
+        #card-image {
+          max-height: 48dvh;
+        }
+
+        .app-footer {
+          display: none;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
     </style>
     <script
       src="https://telegram.org/js/telegram-web-app.js"
@@ -212,21 +520,64 @@
     ></script>
   </head>
   <body>
+    <div id="ambient-background" aria-hidden="true"></div>
+
     <div id="app">
-      <div id="loading">
-        <div class="spinner"></div>
-      </div>
+      <header class="app-header">
+        <div>
+          <p class="eyebrow">Каждый день</p>
+          <h1>Карточка дня</h1>
+        </div>
+        <span id="offline-badge">Сохранённая</span>
+      </header>
 
-      <div id="card-container" style="display: none">
-        <img id="card-image" alt="Карточка дня" />
-      </div>
+      <main class="content">
+        <div id="loading" role="status" aria-label="Загружаем карточку">
+          <div class="skeleton-card"></div>
+          <div class="skeleton-lines" aria-hidden="true">
+            <span class="skeleton-line"></span>
+            <span class="skeleton-line"></span>
+          </div>
+        </div>
 
-      <div id="placeholder" style="display: none">
-        <img id="fallback-image" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23333' width='100' height='100'/%3E%3Ctext x='50' y='50' font-size='40' fill='%23666' text-anchor='middle' dominant-baseline='middle'%3E📷%3C/text%3E%3C/svg%3E" />
-        <p id="placeholder-text">Новая карточка готовится, загляните позже</p>
-      </div>
+        <div id="card-container">
+          <button id="card-open-button" type="button" aria-label="Открыть карточку на весь экран">
+            <img id="card-image" alt="Карточка дня" decoding="async" />
+          </button>
+          <div id="card-actions">
+            <button id="share-button" class="action-button primary" type="button">
+              <span class="action-icon" aria-hidden="true">↗</span>
+              Поделиться
+            </button>
+            <button id="save-button" class="action-button" type="button">
+              <span class="action-icon" aria-hidden="true">↓</span>
+              Сохранить
+            </button>
+          </div>
+        </div>
 
-      <div id="error"></div>
+        <div id="placeholder">
+          <img id="fallback-image" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='22' fill='%2324262c' width='100' height='100'/%3E%3Ctext x='50' y='52' font-size='38' fill='%23888e9a' text-anchor='middle' dominant-baseline='middle'%3E✦%3C/text%3E%3C/svg%3E" />
+          <p id="placeholder-text">Карточка пока недоступна</p>
+        </div>
+
+        <div id="error" role="alert" aria-live="polite">
+          <p id="error-message"></p>
+          <button id="retry-button" type="button">Попробовать снова</button>
+        </div>
+      </main>
+
+      <footer class="app-footer">
+        <span id="card-date"></span> · новая карточка каждый день
+      </footer>
+    </div>
+
+    <div id="toast" role="status" aria-live="polite"></div>
+
+    <div id="card-preview" aria-hidden="true">
+      <button id="preview-backdrop" type="button" aria-label="Закрыть просмотр"></button>
+      <img id="preview-image" alt="Карточка дня в полном размере" />
+      <button id="preview-close-button" type="button" aria-label="Закрыть">×</button>
     </div>
 
     <div id="admin-panel">
