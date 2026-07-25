@@ -4,7 +4,7 @@ import {
   initTelegramWebApp,
   isAdmin,
 } from './utils/telegram.js';
-import { getCardByDate } from './api/supabase.js';
+import { getArchivedCards, getCardByDate } from './api/supabase.js';
 import { supabase } from './config.js';
 import {
   showLoading,
@@ -19,17 +19,24 @@ import {
   showToast,
 } from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
-import { formatCardDate, getTodayUTC } from './utils/date.js';
+import { formatCardDate, getDateInTimeZone } from './utils/date.js';
 
 const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 const LAST_CARD_KEY = 'daily-card:last-card:v1';
 const REVEAL_KEY_PREFIX = 'daily-card:revealed:v2:';
+const ARCHIVE_PAGE_SIZE = 12;
 
 let refreshTimer = null;
 let activeLoad = null;
 let displayedCardVersion = null;
 let displayedCardUrl = null;
 let displayedCardDate = null;
+let archiveOffset = 0;
+let archiveLoading = false;
+
+function getToday() {
+  return getDateInTimeZone(new Date(), 'Europe/Moscow');
+}
 
 function readSubscriptionFlag(storageKey) {
   if (!storageKey) return false;
@@ -95,7 +102,8 @@ function rememberCardReveal(date, version) {
 function updateCardDate(date, { saved = false } = {}) {
   const dateEl = document.getElementById('card-date-label');
   if (!dateEl) return;
-  dateEl.textContent = `${saved ? 'Сохранённая' : 'Сегодня'} · ${formatCardDate(date)}`;
+  const prefix = saved ? 'Сохранённая' : date === getToday() ? 'Сегодня' : 'Архив';
+  dateEl.textContent = `${prefix} · ${formatCardDate(date)}`;
 }
 
 async function showCachedCard() {
@@ -134,7 +142,7 @@ async function loadCardInternal() {
     hideError();
     if (isInitialLoad) showLoading();
 
-    const today = getTodayUTC();
+    const today = getToday();
     updateCardDate(today);
     const card = await getCardByDate(today);
 
@@ -214,6 +222,85 @@ function closeAdminPanel() {
   document.body.classList.remove('modal-open');
 }
 
+function closeArchive() {
+  const overlay = document.getElementById('archive-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+}
+
+function createArchiveItem(card) {
+  const button = document.createElement('button');
+  button.className = 'archive-card';
+  button.type = 'button';
+  button.dataset.date = card.publish_date;
+  button.setAttribute('aria-label', `Открыть карточку за ${formatCardDate(card.publish_date)}`);
+
+  const image = document.createElement('img');
+  image.src = card.image_url;
+  image.alt = '';
+  image.loading = 'lazy';
+  image.decoding = 'async';
+
+  const date = document.createElement('span');
+  date.textContent = formatCardDate(card.publish_date);
+  button.append(image, date);
+  button.addEventListener('click', async () => {
+    closeArchive();
+    const version = card.updated_at || card.image_url;
+    await renderCard(card.image_url);
+    displayedCardVersion = version;
+    displayedCardUrl = card.image_url;
+    displayedCardDate = card.publish_date;
+    updateCardDate(card.publish_date);
+    setCardRevealed(hasRevealedCard(card.publish_date, version));
+    setOfflineState(false);
+  });
+  return button;
+}
+
+async function loadArchive({ reset = false } = {}) {
+  if (archiveLoading) return;
+  const grid = document.getElementById('archive-grid');
+  const moreButton = document.getElementById('archive-more-button');
+  const empty = document.getElementById('archive-empty');
+  if (!grid || !moreButton || !empty) return;
+
+  archiveLoading = true;
+  moreButton.disabled = true;
+  if (reset) {
+    archiveOffset = 0;
+    grid.replaceChildren();
+  }
+
+  try {
+    const cards = await getArchivedCards(getToday(), {
+      from: archiveOffset,
+      limit: ARCHIVE_PAGE_SIZE,
+    });
+    cards.forEach((card) => grid.append(createArchiveItem(card)));
+    archiveOffset += cards.length;
+    empty.style.display = archiveOffset === 0 ? 'block' : 'none';
+    moreButton.style.display = cards.length === ARCHIVE_PAGE_SIZE ? 'inline-flex' : 'none';
+  } catch (error) {
+    console.error('Error loading archive:', error);
+    showToast('Не удалось загрузить архив');
+  } finally {
+    archiveLoading = false;
+    moreButton.disabled = false;
+  }
+}
+
+function openArchive() {
+  const overlay = document.getElementById('archive-overlay');
+  if (!overlay) return;
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  void loadArchive({ reset: true });
+}
+
 async function shareCard() {
   if (!displayedCardUrl) return;
   const shareData = {
@@ -244,7 +331,7 @@ async function saveCard() {
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = objectUrl;
-    link.download = `daily-card-${displayedCardDate || getTodayUTC()}.jpg`;
+    link.download = `daily-card-${displayedCardDate || getToday()}.jpg`;
     link.click();
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     showToast('Карточка сохранена');
@@ -256,7 +343,7 @@ async function saveCard() {
 
 async function handleCardUploaded({ date }) {
   showToast('Карточка опубликована');
-  if (date === getTodayUTC()) {
+  if (date === getToday()) {
     displayedCardVersion = null;
     await loadCard();
   }
@@ -274,11 +361,21 @@ function initCardControls() {
   document.getElementById('admin-toggle-button')?.addEventListener('click', openAdminPanel);
   document.getElementById('admin-close-button')?.addEventListener('click', closeAdminPanel);
   document.getElementById('admin-backdrop')?.addEventListener('click', closeAdminPanel);
+  document.getElementById('archive-toggle-button')?.addEventListener('click', openArchive);
+  document.getElementById('archive-close-button')?.addEventListener('click', closeArchive);
+  document.getElementById('archive-backdrop')?.addEventListener('click', closeArchive);
+  document.getElementById('archive-more-button')?.addEventListener('click', () => void loadArchive());
+  document.getElementById('today-button')?.addEventListener('click', () => {
+    closeArchive();
+    displayedCardVersion = null;
+    void loadCard();
+  });
 
   document.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') {
       closeCardPreview();
       closeAdminPanel();
+      closeArchive();
     }
   });
 }
