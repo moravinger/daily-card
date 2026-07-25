@@ -2,10 +2,15 @@ import { defineConfig } from 'eslint/config'
 
 const browserGlobals = {
   alert: 'readonly',
+  clearInterval: 'readonly',
   confirm: 'readonly',
   console: 'readonly',
   document: 'readonly',
   FormData: 'readonly',
+  Image: 'readonly',
+  Intl: 'readonly',
+  navigator: 'readonly',
+  fetch: 'readonly',
   setInterval: 'readonly',
   setTimeout: 'readonly',
   URL: 'readonly',

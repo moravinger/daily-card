@@ -4,7 +4,7 @@ export async function getCardByDate(date) {
   try {
     const { data, error } = await supabase
       .from('cards')
-      .select('image_url')
+      .select('image_url, updated_at')
       .eq('publish_date', date)
       .maybeSingle()
 

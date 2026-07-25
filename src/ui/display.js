@@ -1,12 +1,13 @@
 import { hapticFeedback } from '../utils/telegram.js';
-import { withCacheBuster } from '../utils/url.js';
+
+let hasRenderedCard = false;
 
 /**
  * Показать спиннер загрузки
  */
 export function showLoading() {
   const loadingEl = document.getElementById('loading');
-  if (loadingEl) loadingEl.style.display = 'flex';
+  if (loadingEl) loadingEl.style.display = 'block';
 }
 
 /**
@@ -23,44 +24,63 @@ export function hideLoading() {
 export function hideError() {
   const errorEl = document.getElementById('error');
   if (errorEl) {
-    errorEl.textContent = '';
     errorEl.style.display = 'none';
   }
+}
+
+export function isCardRendered() {
+  return hasRenderedCard;
+}
+
+async function preloadImage(imageUrl) {
+  const image = new Image();
+  image.decoding = 'async';
+  image.src = imageUrl;
+
+  if (typeof image.decode === 'function') {
+    await image.decode();
+    return;
+  }
+
+  await new Promise((resolve, reject) => {
+    image.onload = resolve;
+    image.onerror = reject;
+  });
 }
 
 /**
  * Отобразить карточку с анимацией
  * @param {string} imageUrl
- * @param {string} caption
  */
-export function renderCard(imageUrl) {
+export async function renderCard(imageUrl) {
   const cardContainer = document.getElementById('card-container');
   const cardImage = document.getElementById('card-image');
   const placeholderEl = document.getElementById('placeholder');
+  const ambientEl = document.getElementById('ambient-background');
+  const actionBar = document.getElementById('card-actions');
+
+  if (!cardImage || !imageUrl) return;
+
+  await preloadImage(imageUrl);
+
+  const isFirstRender = !hasRenderedCard;
+  if (isFirstRender) cardImage.style.opacity = '0';
+
+  cardImage.src = imageUrl;
+  cardImage.style.opacity = '1';
+  if (ambientEl) ambientEl.style.backgroundImage = `url("${imageUrl}")`;
+  hasRenderedCard = true;
+
+  if (cardContainer) {
+    cardContainer.style.display = 'block';
+  }
 
   if (placeholderEl) {
     placeholderEl.style.display = 'none';
   }
 
-  if (cardImage && imageUrl) {
-    cardImage.src = withCacheBuster(imageUrl, Date.now(), window.location.href);
-    cardImage.style.opacity = '0';
-
-    cardImage.onload = () => {
-      cardImage.style.transition = 'opacity 0.8s ease-in-out';
-      cardImage.style.opacity = '1';
-      hapticFeedback();
-    };
-
-    cardImage.onerror = () => {
-      console.error('Image failed to load, showing fallback:', imageUrl);
-      renderFallback();
-    };
-  }
-
-  if (cardContainer) {
-    cardContainer.style.display = 'block';
-  }
+  if (actionBar) actionBar.style.display = 'grid';
+  hapticFeedback();
 }
 
 /**
@@ -70,10 +90,15 @@ export function renderCard(imageUrl) {
 export function renderFallback(fallbackImageUrl = null) {
   const cardContainer = document.getElementById('card-container');
   const placeholderEl = document.getElementById('placeholder');
+  const actionBar = document.getElementById('card-actions');
+  const ambientEl = document.getElementById('ambient-background');
 
   if (cardContainer) {
     cardContainer.style.display = 'none';
   }
+  hasRenderedCard = false;
+  if (actionBar) actionBar.style.display = 'none';
+  if (ambientEl) ambientEl.style.backgroundImage = '';
 
   if (placeholderEl) {
     placeholderEl.style.display = 'flex';
@@ -91,10 +116,26 @@ export function renderFallback(fallbackImageUrl = null) {
  * Показать ошибку
  * @param {string} message
  */
-export function renderError(message) {
+export function renderError(message, { retry = true } = {}) {
   const errorEl = document.getElementById('error');
+  const messageEl = document.getElementById('error-message');
+  const retryButton = document.getElementById('retry-button');
   if (errorEl) {
-    errorEl.textContent = message;
     errorEl.style.display = 'block';
   }
+  if (messageEl) messageEl.textContent = message;
+  if (retryButton) retryButton.style.display = retry ? 'inline-flex' : 'none';
+}
+
+export function setOfflineState(isOffline) {
+  const badge = document.getElementById('offline-badge');
+  if (badge) badge.style.display = isOffline ? 'inline-flex' : 'none';
+}
+
+export function showToast(message) {
+  const toast = document.getElementById('toast');
+  if (!toast) return;
+  toast.textContent = message;
+  toast.classList.add('visible');
+  window.setTimeout(() => toast.classList.remove('visible'), 2200);
 }
