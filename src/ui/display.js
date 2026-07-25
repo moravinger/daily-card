@@ -57,7 +57,6 @@ export async function renderCard(imageUrl) {
   const cardImage = document.getElementById('card-image');
   const placeholderEl = document.getElementById('placeholder');
   const ambientEl = document.getElementById('ambient-background');
-  const actionBar = document.getElementById('card-actions');
 
   if (!cardImage || !imageUrl) return;
 
@@ -79,8 +78,47 @@ export async function renderCard(imageUrl) {
     placeholderEl.style.display = 'none';
   }
 
-  if (actionBar) actionBar.style.display = 'grid';
-  hapticFeedback();
+  hideError();
+}
+
+export function setCardRevealed(revealed, { animate = false } = {}) {
+  const cardContainer = document.getElementById('card-container');
+  const revealCover = document.getElementById('reveal-cover');
+  const revealedContent = document.getElementById('revealed-content');
+  const revealButton = document.getElementById('reveal-button');
+  const title = document.getElementById('screen-title');
+  const footer = document.getElementById('app-footer');
+
+  if (!cardContainer || !revealCover || !revealedContent) return;
+
+  if (revealed) {
+    if (revealButton) revealButton.disabled = true;
+    if (animate) {
+      cardContainer.classList.add('revealing');
+      window.setTimeout(() => {
+        revealCover.style.display = 'none';
+        revealedContent.style.display = 'block';
+        cardContainer.classList.add('reveal-entering');
+      }, 430);
+      window.setTimeout(() => {
+        cardContainer.classList.remove('revealing', 'reveal-entering');
+      }, 1000);
+    } else {
+      revealCover.style.display = 'none';
+      revealedContent.style.display = 'block';
+    }
+    if (title) title.textContent = 'Карточка дня';
+    if (footer) footer.textContent = 'Нажми на карточку, чтобы открыть полностью';
+    hapticFeedback();
+    return;
+  }
+
+  cardContainer.classList.remove('revealing', 'reveal-entering');
+  if (revealButton) revealButton.disabled = false;
+  revealCover.style.display = 'block';
+  revealedContent.style.display = 'none';
+  if (title) title.textContent = 'Твоя карточка на сегодня';
+  if (footer) footer.textContent = 'Новая карточка каждый день';
 }
 
 /**
@@ -90,14 +128,12 @@ export async function renderCard(imageUrl) {
 export function renderFallback(fallbackImageUrl = null) {
   const cardContainer = document.getElementById('card-container');
   const placeholderEl = document.getElementById('placeholder');
-  const actionBar = document.getElementById('card-actions');
   const ambientEl = document.getElementById('ambient-background');
 
   if (cardContainer) {
     cardContainer.style.display = 'none';
   }
   hasRenderedCard = false;
-  if (actionBar) actionBar.style.display = 'none';
   if (ambientEl) ambientEl.style.backgroundImage = '';
 
   if (placeholderEl) {

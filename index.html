@@ -3,11 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0d0d0d" />
+    <meta name="theme-color" content="#0b0b0d" />
     <meta name="referrer" content="no-referrer" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'"
+      content="default-src 'self'; script-src 'self' https://telegram.org; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://*.supabase.co; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'"
     />
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
     <link rel="shortcut icon" href="%BASE_URL%favicon.svg" type="image/svg+xml" />
@@ -15,57 +15,68 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0a0b0d;
-        --surface: rgba(25, 27, 32, 0.82);
-        --surface-strong: #1a1c21;
-        --text: #f7f7f8;
-        --muted: #9da2ad;
-        --accent: #7c5cff;
-        --accent-strong: #6747ef;
+        --bg: #0b0b0d;
+        --surface: rgba(25, 25, 29, 0.82);
+        --surface-solid: #1b1b20;
+        --surface-soft: #23232a;
+        --text: #f4f0e8;
+        --muted: #a5a1a0;
+        --quiet: #77747a;
+        --accent: #8b6cff;
+        --accent-strong: #7657ef;
+        --success: #70d99b;
+        --danger: #ff8c8c;
         --stroke: rgba(255, 255, 255, 0.1);
+        --shadow: rgba(0, 0, 0, 0.42);
       }
 
       * {
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
-        box-sizing: border-box;
       }
 
-      button {
+      button,
+      input {
         font: inherit;
       }
 
+      button {
+        -webkit-tap-highlight-color: transparent;
+      }
+
       body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
-          Cantarell, 'Helvetica Neue', sans-serif;
-        background: var(--bg);
-        color: var(--text);
         min-height: 100vh;
         min-height: 100dvh;
         overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       }
 
-      body.preview-open {
+      body.modal-open {
         overflow: hidden;
       }
 
       #ambient-background {
         position: fixed;
-        inset: -48px;
+        inset: -64px;
         z-index: -2;
         background-position: center;
         background-size: cover;
-        filter: blur(48px) saturate(0.8);
-        opacity: 0.18;
-        transform: scale(1.12);
-        transition: background-image 0.5s ease;
+        filter: blur(58px) saturate(0.78);
+        opacity: 0.16;
+        transform: scale(1.15);
+        transition: background-image 0.6s ease, opacity 0.6s ease;
       }
 
       #ambient-background::after {
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(180deg, rgba(10, 11, 13, 0.68), var(--bg) 78%);
+        background:
+          radial-gradient(circle at 50% 32%, transparent 0, rgba(11, 11, 13, 0.55) 52%),
+          linear-gradient(180deg, rgba(11, 11, 13, 0.36), var(--bg) 88%);
       }
 
       #app {
@@ -77,30 +88,38 @@
         margin: 0 auto;
         padding:
           max(18px, env(safe-area-inset-top, 0px))
-          16px
-          max(18px, env(safe-area-inset-bottom, 0px));
+          18px
+          max(16px, env(safe-area-inset-bottom, 0px));
       }
 
       .app-header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        padding: 4px 2px 16px;
+        gap: 14px;
+        padding: 5px 2px 14px;
       }
 
       .eyebrow {
         color: var(--muted);
         font-size: 12px;
         font-weight: 700;
-        letter-spacing: 0.12em;
+        letter-spacing: 0.13em;
         text-transform: uppercase;
       }
 
       h1 {
-        margin-top: 4px;
-        font-size: clamp(25px, 7vw, 32px);
-        line-height: 1.05;
-        letter-spacing: -0.035em;
+        max-width: 340px;
+        margin-top: 5px;
+        font-size: clamp(26px, 7vw, 34px);
+        line-height: 1.04;
+        letter-spacing: -0.04em;
+      }
+
+      .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
       }
 
       #offline-badge {
@@ -110,19 +129,38 @@
         padding: 7px 10px;
         border: 1px solid var(--stroke);
         border-radius: 999px;
-        background: rgba(10, 11, 13, 0.5);
+        background: rgba(11, 11, 13, 0.55);
         color: var(--muted);
         font-size: 12px;
         font-weight: 600;
-        backdrop-filter: blur(12px);
+        backdrop-filter: blur(14px);
       }
 
       #offline-badge::before {
-        content: '';
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #f5a524;
+        background: #f5b84b;
+        content: '';
+      }
+
+      .icon-button {
+        display: inline-flex;
+        width: 42px;
+        height: 42px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid var(--stroke);
+        border-radius: 50%;
+        background: rgba(27, 27, 32, 0.78);
+        color: var(--text);
+        cursor: pointer;
+        font-size: 20px;
+        backdrop-filter: blur(16px);
+      }
+
+      #admin-toggle-button {
+        display: none;
       }
 
       .content {
@@ -143,50 +181,125 @@
       }
 
       .skeleton-card {
-        aspect-ratio: 4 / 3;
+        aspect-ratio: 1.42;
         overflow: hidden;
         border: 1px solid var(--stroke);
-        border-radius: 20px;
-        background: var(--surface-strong);
-        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+        border-radius: 26px;
+        background: var(--surface-solid);
       }
 
       .skeleton-card::after {
-        content: '';
         display: block;
-        width: 45%;
+        width: 42%;
         height: 100%;
-        background: linear-gradient(
-          90deg,
-          transparent,
-          rgba(255, 255, 255, 0.07),
-          transparent
-        );
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
         animation: shimmer 1.35s ease-in-out infinite;
+        content: '';
         transform: translateX(-120%);
       }
 
-      .skeleton-lines {
-        display: grid;
-        gap: 10px;
-        margin-top: 18px;
-      }
-
       .skeleton-line {
-        height: 12px;
+        width: 70%;
+        height: 13px;
+        margin: 18px auto 0;
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.07);
       }
 
-      .skeleton-line:last-child {
-        width: 62%;
-      }
-
       @keyframes shimmer {
-        to { transform: translateX(320%); }
+        to { transform: translateX(340%); }
       }
 
       #card-container {
+        display: none;
+        flex-direction: column;
+      }
+
+      #reveal-cover {
+        display: none;
+        text-align: center;
+      }
+
+      .sealed-card {
+        position: relative;
+        display: grid;
+        aspect-ratio: 1.42;
+        overflow: hidden;
+        place-items: center;
+        border: 1px solid rgba(139, 108, 255, 0.28);
+        border-radius: 26px;
+        background:
+          radial-gradient(circle at 50% 48%, rgba(139, 108, 255, 0.32), transparent 33%),
+          linear-gradient(145deg, #252039, #17171d 68%);
+        box-shadow: 0 28px 80px var(--shadow);
+      }
+
+      .sealed-card::before {
+        position: absolute;
+        inset: 0;
+        background-image:
+          linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.05) 48%, transparent 52%),
+          linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.04) 48%, transparent 52%);
+        background-size: 42px 42px;
+        content: '';
+        mask-image: linear-gradient(to bottom, black, transparent);
+      }
+
+      .seal {
+        position: relative;
+        display: grid;
+        width: 92px;
+        height: 92px;
+        place-items: center;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 16px 46px rgba(139, 108, 255, 0.34);
+        font-size: 36px;
+      }
+
+      .reveal-copy {
+        margin: 18px 0 14px;
+        color: var(--muted);
+        font-size: 15px;
+      }
+
+      .primary-button,
+      .secondary-button {
+        display: inline-flex;
+        min-height: 50px;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 16px;
+        cursor: pointer;
+        font-weight: 700;
+        transition: transform 0.16s ease, background 0.16s ease;
+      }
+
+      .primary-button {
+        border: 0;
+        background: var(--accent);
+        color: #fff;
+      }
+
+      .secondary-button {
+        border: 1px solid var(--stroke);
+        background: rgba(28, 28, 33, 0.78);
+        color: var(--text);
+      }
+
+      .primary-button:active,
+      .secondary-button:active,
+      .icon-button:active {
+        transform: scale(0.97);
+      }
+
+      #reveal-button {
+        width: 100%;
+      }
+
+      #revealed-content {
         display: none;
       }
 
@@ -195,21 +308,20 @@
         width: 100%;
         overflow: hidden;
         border: 1px solid var(--stroke);
-        border-radius: 20px;
+        border-radius: 26px;
         background: var(--surface);
-        box-shadow: 0 26px 80px rgba(0, 0, 0, 0.4);
+        box-shadow: 0 28px 80px var(--shadow);
         cursor: zoom-in;
-        -webkit-tap-highlight-color: transparent;
       }
 
       #card-image {
         display: block;
         width: 100%;
-        max-height: 58vh;
-        max-height: 58dvh;
+        max-height: 56vh;
+        max-height: 56dvh;
         object-fit: contain;
         opacity: 0;
-        transition: opacity 0.5s ease-in-out, transform 0.25s ease;
+        transition: opacity 0.45s ease, transform 0.2s ease;
       }
 
       #card-open-button:active #card-image {
@@ -217,60 +329,57 @@
       }
 
       #card-actions {
-        display: none;
+        display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 10px;
         margin-top: 14px;
       }
 
-      .action-button,
-      #retry-button {
-        display: inline-flex;
-        min-height: 48px;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        border: 1px solid var(--stroke);
-        border-radius: 14px;
-        background: rgba(27, 29, 34, 0.78);
-        color: var(--text);
-        cursor: pointer;
-        font-weight: 650;
-        backdrop-filter: blur(16px);
-        transition: transform 0.16s ease, background 0.16s ease;
-      }
-
-      .action-button:active,
-      #retry-button:active {
-        transform: scale(0.97);
-      }
-
-      .action-button.primary {
-        border-color: transparent;
-        background: var(--accent);
+      #card-actions button {
+        min-width: 0;
       }
 
       .action-icon {
         font-size: 18px;
-        line-height: 1;
+      }
+
+      .revealing #reveal-cover {
+        animation: reveal-away 0.48s ease both;
+      }
+
+      .reveal-entering #revealed-content {
+        animation: reveal-in 0.52s ease both;
+      }
+
+      @keyframes reveal-away {
+        to { opacity: 0; transform: scale(0.88) rotate(1deg); }
+      }
+
+      @keyframes reveal-in {
+        from { opacity: 0; transform: translateY(16px) scale(0.94); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       #placeholder {
         display: none;
         flex-direction: column;
         align-items: center;
-        padding: 34px 22px;
+        padding: 38px 24px;
         border: 1px solid var(--stroke);
-        border-radius: 20px;
+        border-radius: 26px;
         background: var(--surface);
         text-align: center;
       }
 
-      #fallback-image {
-        width: 76px;
-        height: 76px;
-        border-radius: 18px;
-        opacity: 0.62;
+      .placeholder-symbol {
+        display: grid;
+        width: 78px;
+        height: 78px;
+        place-items: center;
+        border-radius: 22px;
+        background: var(--surface-soft);
+        color: var(--muted);
+        font-size: 32px;
       }
 
       #placeholder-text {
@@ -286,7 +395,7 @@
       }
 
       #error-message {
-        color: #d4d6dc;
+        color: #d7d3cd;
         font-size: 14px;
         line-height: 1.45;
       }
@@ -295,12 +404,11 @@
         min-height: 44px;
         margin-top: 14px;
         padding: 0 20px;
-        background: var(--accent);
       }
 
       .app-footer {
-        padding-top: 14px;
-        color: #737985;
+        padding-top: 13px;
+        color: var(--quiet);
         font-size: 12px;
         text-align: center;
       }
@@ -309,13 +417,13 @@
         position: fixed;
         bottom: max(24px, env(safe-area-inset-bottom, 0px));
         left: 50%;
-        z-index: 1200;
+        z-index: 1400;
         max-width: calc(100% - 32px);
         padding: 11px 16px;
         border: 1px solid var(--stroke);
         border-radius: 999px;
-        background: rgba(30, 32, 38, 0.96);
-        box-shadow: 0 12px 34px rgba(0, 0, 0, 0.38);
+        background: rgba(31, 31, 36, 0.96);
+        box-shadow: 0 12px 36px var(--shadow);
         opacity: 0;
         pointer-events: none;
         transform: translate(-50%, 12px);
@@ -332,7 +440,7 @@
         display: none;
         position: fixed;
         inset: 0;
-        z-index: 1100;
+        z-index: 1200;
         align-items: center;
         justify-content: center;
         padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
@@ -342,12 +450,11 @@
         display: flex;
       }
 
-      #preview-backdrop {
+      .modal-backdrop {
         position: absolute;
         inset: 0;
         border: 0;
-        background: rgba(0, 0, 0, 0.92);
-        cursor: zoom-out;
+        background: rgba(0, 0, 0, 0.91);
       }
 
       #preview-image {
@@ -356,7 +463,7 @@
         max-width: 100%;
         max-height: 92vh;
         max-height: 92dvh;
-        border-radius: 12px;
+        border-radius: 16px;
         object-fit: contain;
       }
 
@@ -365,166 +472,197 @@
         top: max(16px, env(safe-area-inset-top));
         right: 16px;
         z-index: 2;
-        width: 44px;
-        height: 44px;
-        border: 1px solid var(--stroke);
-        border-radius: 50%;
-        background: rgba(28, 29, 34, 0.86);
-        color: #fff;
-        cursor: pointer;
-        font-size: 22px;
+      }
+
+      #admin-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 1300;
+        align-items: flex-end;
+        justify-content: center;
+      }
+
+      #admin-overlay.visible {
+        display: flex;
       }
 
       #admin-panel {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background: rgba(0, 0, 0, 0.95);
-        padding: 20px;
-        border-top: 1px solid #333;
-        max-height: 50vh;
+        position: relative;
+        z-index: 1;
+        width: min(100%, 560px);
+        max-height: calc(100dvh - max(16px, env(safe-area-inset-top)));
         overflow-y: auto;
-        display: none;
-        z-index: 1000;
+        padding: 18px 18px max(20px, env(safe-area-inset-bottom));
+        border: 1px solid var(--stroke);
+        border-bottom: 0;
+        border-radius: 28px 28px 0 0;
+        background: #121216;
+        box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.52);
       }
 
-      #admin-panel.visible {
+      .admin-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+      }
+
+      .admin-header h2 {
+        margin-top: 4px;
+        font-size: 25px;
+        letter-spacing: -0.03em;
+      }
+
+      #admin-preview {
+        position: relative;
+        display: grid;
+        aspect-ratio: 1.62;
+        overflow: hidden;
+        place-items: center;
+        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border-radius: 20px;
+        background: var(--surface-solid);
+      }
+
+      #admin-preview-image {
+        display: none;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      #admin-preview-empty {
+        color: var(--muted);
+        text-align: center;
+      }
+
+      .preview-plus {
         display: block;
+        margin-bottom: 8px;
+        font-size: 30px;
       }
 
       #upload-form {
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
+        display: grid;
+        gap: 14px;
+        margin-top: 16px;
+      }
+
+      .field-group {
+        display: grid;
+        gap: 7px;
       }
 
       .field-label {
-        margin-bottom: -6px;
-        color: #d8dbe2;
+        color: #dad6d0;
         font-size: 13px;
-        font-weight: 600;
+        font-weight: 650;
       }
 
-      #upload-form input,
-      #upload-form button {
+      #upload-form input {
+        width: 100%;
+        min-height: 48px;
         padding: 12px;
-        border: 1px solid #444;
-        background: #1a1a1a;
-        color: #fff;
-        border-radius: 4px;
-        font-size: 14px;
+        border: 1px solid var(--stroke);
+        border-radius: 14px;
+        background: var(--surface-solid);
+        color: var(--text);
+        font-size: 15px;
       }
 
       #upload-form input[type='file'] {
-        cursor: pointer;
+        padding: 9px;
+      }
+
+      #upload-form input[type='file']::file-selector-button {
+        min-height: 32px;
+        margin-right: 10px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 10px;
+        background: var(--surface-soft);
+        color: var(--text);
       }
 
       #upload-form input[type='date'] {
-        width: 100%;
-        min-height: 44px;
-        color: #fff;
         color-scheme: dark;
-        -webkit-text-fill-color: #fff;
+        -webkit-text-fill-color: var(--text);
         opacity: 1;
       }
 
       #upload-form input[type='date']::-webkit-date-and-time-value,
       #upload-form input[type='date']::-webkit-datetime-edit {
-        color: #fff;
-        -webkit-text-fill-color: #fff;
+        color: var(--text);
+        -webkit-text-fill-color: var(--text);
         text-align: left;
         opacity: 1;
       }
 
-      #upload-form input[type='date']::-webkit-calendar-picker-indicator {
-        cursor: pointer;
-        filter: invert(1);
-        opacity: 0.85;
+      #file-meta {
+        color: var(--quiet);
+        font-size: 12px;
       }
 
-      #upload-form button {
-        background: #007AFF;
-        border: none;
-        cursor: pointer;
-        font-weight: 600;
-        transition: background 0.3s;
+      #upload-submit {
+        width: 100%;
       }
 
-      #upload-form button:hover {
-        background: #0051cc;
-      }
-
-      #upload-form button:active {
-        background: #003d99;
-      }
-
-      #upload-form button:disabled {
+      #upload-submit:disabled {
         cursor: wait;
-        opacity: 0.6;
+        opacity: 0.55;
       }
 
       #upload-status {
         display: none;
-        margin-top: 12px;
-        text-align: center;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: var(--surface-solid);
         font-size: 14px;
-        padding: 12px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
+        text-align: center;
       }
 
-      #admin-toggle-container {
-        display: none; /* Скрыто по умолчанию */
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1001;
+      #upload-status.success {
+        color: var(--success);
       }
 
-      #admin-toggle-button {
-        width: 56px;
-        height: 56px;
-        border-radius: 50%;
-        background: #007AFF;
-        border: none;
-        font-size: 24px;
-        color: white;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-        transition: transform 0.2s ease-in-out;
-      }
-
-      #admin-toggle-button:hover {
-        transform: scale(1.05);
+      #upload-status.error {
+        color: var(--danger);
       }
 
       @media (hover: hover) {
-        .action-button:hover,
-        #retry-button:hover {
-          background: #30333a;
+        .primary-button:hover {
+          background: var(--accent-strong);
         }
 
-        .action-button.primary:hover,
-        #retry-button:hover {
-          background: var(--accent-strong);
+        .secondary-button:hover,
+        .icon-button:hover {
+          background: var(--surface-soft);
         }
       }
 
-      @media (max-height: 660px) {
+      @media (max-height: 690px) {
         .app-header {
-          padding-bottom: 10px;
+          padding-bottom: 9px;
         }
 
         h1 {
-          font-size: 24px;
+          font-size: 25px;
+        }
+
+        .sealed-card {
+          aspect-ratio: 1.72;
+        }
+
+        .seal {
+          width: 72px;
+          height: 72px;
+          font-size: 29px;
         }
 
         #card-image {
-          max-height: 48dvh;
+          max-height: 46dvh;
         }
 
         .app-footer {
@@ -536,7 +674,6 @@
         *,
         *::before,
         *::after {
-          scroll-behavior: auto !important;
           animation-duration: 0.01ms !important;
           animation-iteration-count: 1 !important;
           transition-duration: 0.01ms !important;
@@ -555,74 +692,103 @@
     <div id="app">
       <header class="app-header">
         <div>
-          <p class="eyebrow">Каждый день</p>
-          <h1>Карточка дня</h1>
+          <p class="eyebrow" id="card-date-label">Сегодня</p>
+          <h1 id="screen-title">Твоя карточка на сегодня</h1>
         </div>
-        <span id="offline-badge">Сохранённая</span>
+        <div class="header-actions">
+          <span id="offline-badge">Сохранённая</span>
+          <button id="admin-toggle-button" class="icon-button" type="button" aria-label="Открыть управление">
+            ⚙
+          </button>
+        </div>
       </header>
 
       <main class="content">
         <div id="loading" role="status" aria-label="Загружаем карточку">
           <div class="skeleton-card"></div>
-          <div class="skeleton-lines" aria-hidden="true">
-            <span class="skeleton-line"></span>
-            <span class="skeleton-line"></span>
-          </div>
+          <div class="skeleton-line" aria-hidden="true"></div>
         </div>
 
-        <div id="card-container">
-          <button id="card-open-button" type="button" aria-label="Открыть карточку на весь экран">
-            <img id="card-image" alt="Карточка дня" decoding="async" />
-          </button>
-          <div id="card-actions">
-            <button id="share-button" class="action-button primary" type="button">
-              <span class="action-icon" aria-hidden="true">↗</span>
-              Поделиться
-            </button>
-            <button id="save-button" class="action-button" type="button">
-              <span class="action-icon" aria-hidden="true">↓</span>
-              Сохранить
-            </button>
+        <section id="card-container" aria-label="Карточка дня">
+          <div id="reveal-cover">
+            <div class="sealed-card" aria-hidden="true">
+              <span class="seal">✦</span>
+            </div>
+            <p class="reveal-copy">Одна карточка. Один момент для себя.</p>
+            <button id="reveal-button" class="primary-button" type="button">Открыть карточку</button>
           </div>
-        </div>
+
+          <div id="revealed-content">
+            <button id="card-open-button" type="button" aria-label="Открыть карточку на весь экран">
+              <img id="card-image" alt="Карточка дня" decoding="async" />
+            </button>
+            <div id="card-actions">
+              <button id="share-button" class="primary-button" type="button">
+                <span class="action-icon" aria-hidden="true">↗</span>
+                Поделиться
+              </button>
+              <button id="save-button" class="secondary-button" type="button">
+                <span class="action-icon" aria-hidden="true">↓</span>
+                Сохранить
+              </button>
+            </div>
+          </div>
+        </section>
 
         <div id="placeholder">
-          <img id="fallback-image" alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect rx='22' fill='%2324262c' width='100' height='100'/%3E%3Ctext x='50' y='52' font-size='38' fill='%23888e9a' text-anchor='middle' dominant-baseline='middle'%3E✦%3C/text%3E%3C/svg%3E" />
+          <span class="placeholder-symbol" aria-hidden="true">✦</span>
           <p id="placeholder-text">Карточка пока недоступна</p>
         </div>
 
         <div id="error" role="alert" aria-live="polite">
           <p id="error-message"></p>
-          <button id="retry-button" type="button">Попробовать снова</button>
+          <button id="retry-button" class="primary-button" type="button">Попробовать снова</button>
         </div>
       </main>
 
-      <footer class="app-footer">
-        <span id="card-date"></span> · новая карточка каждый день
-      </footer>
+      <footer class="app-footer" id="app-footer">Новая карточка каждый день</footer>
     </div>
 
     <div id="toast" role="status" aria-live="polite"></div>
 
     <div id="card-preview" aria-hidden="true">
-      <button id="preview-backdrop" type="button" aria-label="Закрыть просмотр"></button>
+      <button id="preview-backdrop" class="modal-backdrop" type="button" aria-label="Закрыть просмотр"></button>
       <img id="preview-image" alt="Карточка дня в полном размере" />
-      <button id="preview-close-button" type="button" aria-label="Закрыть">×</button>
+      <button id="preview-close-button" class="icon-button" type="button" aria-label="Закрыть">×</button>
     </div>
 
-    <div id="admin-panel">
-      <h3 style="margin-bottom: 12px">Админ-панель</h3>
-      <form id="upload-form">
-        <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" required />
-        <label class="field-label" for="date-input">Дата публикации</label>
-        <input type="date" id="date-input" required />
-        <button type="submit">Загрузить карточку</button>
-      </form>
-      <div id="upload-status"></div>
-    </div>
+    <div id="admin-overlay" aria-hidden="true">
+      <button id="admin-backdrop" class="modal-backdrop" type="button" aria-label="Закрыть управление"></button>
+      <section id="admin-panel" role="dialog" aria-modal="true" aria-labelledby="admin-title">
+        <header class="admin-header">
+          <div>
+            <p class="eyebrow">Управление контентом</p>
+            <h2 id="admin-title">Новая карточка</h2>
+          </div>
+          <button id="admin-close-button" class="icon-button" type="button" aria-label="Закрыть">×</button>
+        </header>
 
-    <div id="admin-toggle-container">
-      <button id="admin-toggle-button" type="button" aria-label="Открыть админ-панель">⚙️</button>
+        <div id="admin-preview">
+          <img id="admin-preview-image" alt="Предварительный просмотр выбранной карточки" />
+          <p id="admin-preview-empty"><span class="preview-plus">＋</span>Превью появится здесь</p>
+        </div>
+
+        <form id="upload-form">
+          <label class="field-group" for="file-input">
+            <span class="field-label">Изображение</span>
+            <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" required />
+            <span id="file-meta">JPEG, PNG или WebP · до 5 МБ</span>
+          </label>
+
+          <label class="field-group" for="date-input">
+            <span class="field-label">Дата публикации</span>
+            <input type="date" id="date-input" required />
+          </label>
+
+          <button id="upload-submit" class="primary-button" type="submit">Опубликовать карточку</button>
+          <div id="upload-status" role="status" aria-live="polite"></div>
+        </form>
+      </section>
     </div>
 
     <script type="module" src="./src/app.js"></script>
