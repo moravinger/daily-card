@@ -5,6 +5,17 @@ export function getTodayUTC(now = new Date()) {
   return `${year}-${month}-${date}`
 }
 
+export function getDateInTimeZone(now = new Date(), timeZone = 'Europe/Moscow') {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now)
+  const values = Object.fromEntries(parts.map(({ type, value }) => [type, value]))
+  return `${values.year}-${values.month}-${values.day}`
+}
+
 export function getTodayLocal(now = new Date()) {
   const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000)
   return local.toISOString().split('T')[0]
