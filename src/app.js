@@ -14,6 +14,7 @@ import {
   renderCard,
   renderFallback,
   renderError,
+  setCardRevealed,
   setOfflineState,
   showToast,
 } from './ui/display.js';
@@ -21,12 +22,14 @@ import { initAdminPanel, setMinDate } from './ui/admin.js';
 import { formatCardDate, getTodayUTC } from './utils/date.js';
 
 const REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const LAST_CARD_KEY = 'daily-card:last-card:v1';
+const REVEAL_KEY_PREFIX = 'daily-card:revealed:v1:';
+
 let refreshTimer = null;
 let activeLoad = null;
 let displayedCardVersion = null;
 let displayedCardUrl = null;
-
-const LAST_CARD_KEY = 'daily-card:last-card:v1';
+let displayedCardDate = null;
 
 function readSubscriptionFlag(storageKey) {
   if (!storageKey) return false;
@@ -64,9 +67,26 @@ function writeLastCard(card) {
   }
 }
 
+function hasRevealedCard(date) {
+  try {
+    return window.localStorage.getItem(`${REVEAL_KEY_PREFIX}${date}`) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function rememberCardReveal(date) {
+  if (!date) return;
+  try {
+    window.localStorage.setItem(`${REVEAL_KEY_PREFIX}${date}`, '1');
+  } catch {
+    // The reveal still works when storage is unavailable.
+  }
+}
+
 function updateCardDate(date) {
-  const dateEl = document.getElementById('card-date');
-  if (dateEl) dateEl.textContent = formatCardDate(date);
+  const dateEl = document.getElementById('card-date-label');
+  if (dateEl) dateEl.textContent = `Сегодня · ${formatCardDate(date)}`;
 }
 
 async function showCachedCard() {
@@ -77,7 +97,9 @@ async function showCachedCard() {
     await renderCard(cachedCard.imageUrl);
     displayedCardVersion = cachedCard.version || cachedCard.imageUrl;
     displayedCardUrl = cachedCard.imageUrl;
+    displayedCardDate = cachedCard.date;
     updateCardDate(cachedCard.date);
+    setCardRevealed(hasRevealedCard(cachedCard.date));
     setOfflineState(true);
     return true;
   } catch {
@@ -85,9 +107,6 @@ async function showCachedCard() {
   }
 }
 
-/**
- * Загрузить и отобразить карточку
- */
 export async function loadCard() {
   if (activeLoad) return activeLoad;
 
@@ -110,22 +129,24 @@ async function loadCardInternal() {
     updateCardDate(today);
     const card = await getCardByDate(today);
 
-    if (card && card.image_url) {
+    if (card?.image_url) {
       const version = card.updated_at || card.image_url;
       if (version !== displayedCardVersion) {
         await renderCard(card.image_url);
         displayedCardVersion = version;
         displayedCardUrl = card.image_url;
+        displayedCardDate = today;
         writeLastCard({
           date: today,
           imageUrl: card.image_url,
           version,
         });
       }
+      setCardRevealed(hasRevealedCard(today));
       setOfflineState(false);
     } else if (isInitialLoad) {
       renderFallback();
-      renderError('Сегодняшняя карточка ещё готовится. Загляните немного позже.', {
+      renderError('Сегодняшняя карточка ещё в пути. Загляните немного позже.', {
         retry: false,
       });
     }
@@ -143,6 +164,12 @@ async function loadCardInternal() {
   }
 }
 
+function revealCard() {
+  if (!displayedCardDate) return;
+  rememberCardReveal(displayedCardDate);
+  setCardRevealed(true, { animate: true });
+}
+
 function openCardPreview() {
   if (!displayedCardUrl) return;
   const preview = document.getElementById('card-preview');
@@ -151,7 +178,7 @@ function openCardPreview() {
   previewImage.src = displayedCardUrl;
   preview.classList.add('visible');
   preview.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('preview-open');
+  document.body.classList.add('modal-open');
 }
 
 function closeCardPreview() {
@@ -159,14 +186,30 @@ function closeCardPreview() {
   if (!preview) return;
   preview.classList.remove('visible');
   preview.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('preview-open');
+  document.body.classList.remove('modal-open');
+}
+
+function openAdminPanel() {
+  const overlay = document.getElementById('admin-overlay');
+  if (!overlay) return;
+  overlay.classList.add('visible');
+  overlay.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+}
+
+function closeAdminPanel() {
+  const overlay = document.getElementById('admin-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('visible');
+  overlay.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
 }
 
 async function shareCard() {
   if (!displayedCardUrl) return;
   const shareData = {
     title: 'Карточка дня',
-    text: 'Карточка дня',
+    text: 'Моя карточка дня',
     url: displayedCardUrl,
   };
 
@@ -192,9 +235,9 @@ async function saveCard() {
     const objectUrl = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = objectUrl;
-    link.download = `daily-card-${getTodayUTC()}.jpg`;
+    link.download = `daily-card-${displayedCardDate || getTodayUTC()}.jpg`;
     link.click();
-    URL.revokeObjectURL(objectUrl);
+    window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
     showToast('Карточка сохранена');
   } catch {
     window.open(displayedCardUrl, '_blank', 'noopener');
@@ -202,42 +245,56 @@ async function saveCard() {
   }
 }
 
+async function handleCardUploaded({ date }) {
+  showToast('Карточка опубликована');
+  if (date === getTodayUTC()) {
+    displayedCardVersion = null;
+    await loadCard();
+  }
+  window.setTimeout(closeAdminPanel, 700);
+}
+
 function initCardControls() {
   document.getElementById('retry-button')?.addEventListener('click', () => void loadCard());
+  document.getElementById('reveal-button')?.addEventListener('click', revealCard);
   document.getElementById('card-open-button')?.addEventListener('click', openCardPreview);
   document.getElementById('preview-close-button')?.addEventListener('click', closeCardPreview);
+  document.getElementById('preview-backdrop')?.addEventListener('click', closeCardPreview);
   document.getElementById('share-button')?.addEventListener('click', () => void shareCard());
   document.getElementById('save-button')?.addEventListener('click', () => void saveCard());
-  document.getElementById('preview-backdrop')?.addEventListener('click', closeCardPreview);
+  document.getElementById('admin-toggle-button')?.addEventListener('click', openAdminPanel);
+  document.getElementById('admin-close-button')?.addEventListener('click', closeAdminPanel);
+  document.getElementById('admin-backdrop')?.addEventListener('click', closeAdminPanel);
+
   document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') closeCardPreview();
+    if (event.key === 'Escape') {
+      closeCardPreview();
+      closeAdminPanel();
+    }
   });
 }
 
-/**
- * Подписать пользователя на уведомления
- */
 async function subscribeUser() {
   try {
-    const initData = window.Telegram?.WebApp?.initData
-    if (!initData) return
+    const initData = window.Telegram?.WebApp?.initData;
+    if (!initData) return;
 
-    const userId = getUserId()
-    const storageKey = userId ? `daily-card:subscribed:v1:${userId}` : null
-    if (readSubscriptionFlag(storageKey)) return
+    const userId = getUserId();
+    const storageKey = userId ? `daily-card:subscribed:v1:${userId}` : null;
+    if (readSubscriptionFlag(storageKey)) return;
 
     const { error } = await supabase.functions.invoke('subscribe-user', {
       body: { initData },
-    })
+    });
 
     if (error) {
-      console.warn('Subscribe failed:', error)
-      return
+      console.warn('Subscribe failed:', error);
+      return;
     }
 
-    writeSubscriptionFlag(storageKey)
+    writeSubscriptionFlag(storageKey);
   } catch (error) {
-    console.warn('Subscribe failed:', error)
+    console.warn('Subscribe failed:', error);
   }
 }
 
@@ -263,46 +320,31 @@ function handleVisibilityChange() {
   startAutoRefresh();
 }
 
-/**
- * Инициализировать приложение
- */
 function initApp() {
   const tg = initTelegramWebApp();
   if (tg && tgVersionAtLeast('6.1')) {
-    tg.setHeaderColor('#0d0d0d');
+    tg.setHeaderColor('#0b0b0d');
   }
 
   void subscribeUser();
-
   initCardControls();
   void loadCard();
   startAutoRefresh();
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
-  // Показываем админ-панель, если пользователь админ
-  if (isAdmin()) {
-    const adminPanel = document.getElementById('admin-panel');
-    const toggleContainer = document.getElementById('admin-toggle-container');
+  const isAdminPreview = import.meta.env.DEV
+    && new window.URLSearchParams(window.location.search).has('admin-preview');
+
+  if (isAdmin() || isAdminPreview) {
     const toggleButton = document.getElementById('admin-toggle-button');
-
-    if (adminPanel && toggleContainer && toggleButton) {
-      // Показываем кнопку для открытия админки
-      toggleContainer.style.display = 'block';
-
-      // Добавляем обработчик клика
-      toggleButton.addEventListener('click', () => {
-        adminPanel.classList.toggle('visible');
-      });
-
-      // Инициализируем логику формы внутри панели
-      initAdminPanel();
+    if (toggleButton) {
+      toggleButton.style.display = 'inline-flex';
+      initAdminPanel({ onUploaded: handleCardUploaded });
       setMinDate();
     }
   }
-
 }
 
-// Запускаем при готовности DOM
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', initApp);
 } else {
