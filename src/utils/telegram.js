@@ -1,5 +1,10 @@
 import { CONFIG } from '../config.js'
 
+const THEME_COLORS = {
+  dark: '#0b0b0d',
+  light: '#f4f1eb',
+}
+
 export function tgVersionAtLeast(version) {
   if (!window.Telegram?.WebApp?.version) return false
   const parts = window.Telegram.WebApp.version.split('.').map(Number)
@@ -11,6 +16,40 @@ export function tgVersionAtLeast(version) {
     if (a < b) return false
   }
   return true
+}
+
+function getColorScheme(tg, preferredTheme = null) {
+  if (preferredTheme === 'light' || preferredTheme === 'dark') return preferredTheme
+  if (tg?.colorScheme === 'light' || tg?.colorScheme === 'dark') return tg.colorScheme
+  return window.matchMedia?.('(prefers-color-scheme: light)').matches ? 'light' : 'dark'
+}
+
+export function initAppTheme(tg, { preferredTheme = null } = {}) {
+  const systemTheme = window.matchMedia?.('(prefers-color-scheme: light)')
+
+  const applyTheme = () => {
+    const colorScheme = getColorScheme(tg, preferredTheme)
+    const backgroundColor = THEME_COLORS[colorScheme]
+    document.documentElement.dataset.theme = colorScheme
+
+    const themeColor = document.querySelector('meta[name="theme-color"]')
+    if (themeColor) themeColor.setAttribute('content', backgroundColor)
+
+    if (tg && tgVersionAtLeast('6.1')) {
+      tg.setHeaderColor?.(backgroundColor)
+      tg.setBackgroundColor?.(backgroundColor)
+    }
+    if (tg && tgVersionAtLeast('7.10')) {
+      tg.setBottomBarColor?.(backgroundColor)
+    }
+  }
+
+  applyTheme()
+  tg?.onEvent?.('themeChanged', applyTheme)
+
+  if (!tg?.colorScheme && !preferredTheme) {
+    systemTheme?.addEventListener?.('change', applyTheme)
+  }
 }
 
 /**

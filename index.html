@@ -28,6 +28,67 @@
         --danger: #ff8c8c;
         --stroke: rgba(255, 255, 255, 0.1);
         --shadow: rgba(0, 0, 0, 0.42);
+        --ambient-mask: rgba(11, 11, 13, 0.55);
+        --ambient-fade: rgba(11, 11, 13, 0.36);
+        --ambient-opacity: 0.16;
+        --glass: rgba(27, 27, 32, 0.78);
+        --glass-deep: rgba(11, 11, 13, 0.55);
+        --shimmer: rgba(255, 255, 255, 0.07);
+        --sealed-border: rgba(139, 108, 255, 0.28);
+        --sealed-glow: rgba(139, 108, 255, 0.32);
+        --sealed-start: #252039;
+        --sealed-end: #17171d;
+        --sealed-pattern: rgba(255, 255, 255, 0.05);
+        --seal-border: rgba(255, 255, 255, 0.18);
+        --seal-shadow: rgba(139, 108, 255, 0.34);
+        --on-accent: #fff;
+        --error-text: #d7d3cd;
+        --toast-bg: rgba(31, 31, 36, 0.96);
+        --modal-backdrop: rgba(0, 0, 0, 0.91);
+        --admin-bg: #121216;
+        --admin-shadow: rgba(0, 0, 0, 0.52);
+        --preview-border: rgba(255, 255, 255, 0.2);
+        --field-label: #dad6d0;
+        --warning: #f5b84b;
+      }
+
+      :root[data-theme='light'] {
+        color-scheme: light;
+        --bg: #f4f1eb;
+        --surface: rgba(255, 255, 255, 0.78);
+        --surface-solid: #ffffff;
+        --surface-soft: #eae6df;
+        --text: #211f24;
+        --muted: #68636a;
+        --quiet: #8a858c;
+        --accent: #7657ef;
+        --accent-strong: #6344dc;
+        --success: #187849;
+        --danger: #b42318;
+        --stroke: rgba(42, 36, 48, 0.13);
+        --shadow: rgba(57, 45, 67, 0.17);
+        --ambient-mask: rgba(244, 241, 235, 0.58);
+        --ambient-fade: rgba(244, 241, 235, 0.42);
+        --ambient-opacity: 0.12;
+        --glass: rgba(255, 255, 255, 0.78);
+        --glass-deep: rgba(255, 255, 255, 0.72);
+        --shimmer: rgba(118, 87, 239, 0.09);
+        --sealed-border: rgba(118, 87, 239, 0.24);
+        --sealed-glow: rgba(118, 87, 239, 0.2);
+        --sealed-start: #e7e0fb;
+        --sealed-end: #f8f5ff;
+        --sealed-pattern: rgba(72, 58, 91, 0.07);
+        --seal-border: rgba(255, 255, 255, 0.56);
+        --seal-shadow: rgba(118, 87, 239, 0.24);
+        --on-accent: #fff;
+        --error-text: #625c64;
+        --toast-bg: rgba(255, 255, 255, 0.96);
+        --modal-backdrop: rgba(24, 20, 28, 0.72);
+        --admin-bg: #fbf9f5;
+        --admin-shadow: rgba(47, 37, 55, 0.2);
+        --preview-border: rgba(42, 36, 48, 0.24);
+        --field-label: #4d4850;
+        --warning: #c98200;
       }
 
       * {
@@ -65,7 +126,7 @@
         background-position: center;
         background-size: cover;
         filter: blur(58px) saturate(0.78);
-        opacity: 0.16;
+        opacity: var(--ambient-opacity);
         transform: scale(1.15);
         transition: background-image 0.6s ease, opacity 0.6s ease;
       }
@@ -75,8 +136,8 @@
         position: absolute;
         inset: 0;
         background:
-          radial-gradient(circle at 50% 32%, transparent 0, rgba(11, 11, 13, 0.55) 52%),
-          linear-gradient(180deg, rgba(11, 11, 13, 0.36), var(--bg) 88%);
+          radial-gradient(circle at 50% 32%, transparent 0, var(--ambient-mask) 52%),
+          linear-gradient(180deg, var(--ambient-fade), var(--bg) 88%);
       }
 
       #app {
@@ -129,7 +190,7 @@
         padding: 7px 10px;
         border: 1px solid var(--stroke);
         border-radius: 999px;
-        background: rgba(11, 11, 13, 0.55);
+        background: var(--glass-deep);
         color: var(--muted);
         font-size: 12px;
         font-weight: 600;
@@ -140,7 +201,7 @@
         width: 6px;
         height: 6px;
         border-radius: 50%;
-        background: #f5b84b;
+        background: var(--warning);
         content: '';
       }
 
@@ -152,7 +213,7 @@
         justify-content: center;
         border: 1px solid var(--stroke);
         border-radius: 50%;
-        background: rgba(27, 27, 32, 0.78);
+        background: var(--glass);
         color: var(--text);
         cursor: pointer;
         font-size: 20px;
@@ -192,7 +253,7 @@
         display: block;
         width: 42%;
         height: 100%;
-        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+        background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
         animation: shimmer 1.35s ease-in-out infinite;
         content: '';
         transform: translateX(-120%);
@@ -203,7 +264,7 @@
         height: 13px;
         margin: 18px auto 0;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.07);
+        background: var(--shimmer);
       }
 
       @keyframes shimmer {
@@ -226,11 +287,11 @@
         aspect-ratio: 1.42;
         overflow: hidden;
         place-items: center;
-        border: 1px solid rgba(139, 108, 255, 0.28);
+        border: 1px solid var(--sealed-border);
         border-radius: 26px;
         background:
-          radial-gradient(circle at 50% 48%, rgba(139, 108, 255, 0.32), transparent 33%),
-          linear-gradient(145deg, #252039, #17171d 68%);
+          radial-gradient(circle at 50% 48%, var(--sealed-glow), transparent 33%),
+          linear-gradient(145deg, var(--sealed-start), var(--sealed-end) 68%);
         box-shadow: 0 28px 80px var(--shadow);
       }
 
@@ -238,8 +299,8 @@
         position: absolute;
         inset: 0;
         background-image:
-          linear-gradient(45deg, transparent 46%, rgba(255, 255, 255, 0.05) 48%, transparent 52%),
-          linear-gradient(-45deg, transparent 46%, rgba(255, 255, 255, 0.04) 48%, transparent 52%);
+          linear-gradient(45deg, transparent 46%, var(--sealed-pattern) 48%, transparent 52%),
+          linear-gradient(-45deg, transparent 46%, var(--sealed-pattern) 48%, transparent 52%);
         background-size: 42px 42px;
         content: '';
         mask-image: linear-gradient(to bottom, black, transparent);
@@ -251,10 +312,10 @@
         width: 92px;
         height: 92px;
         place-items: center;
-        border: 1px solid rgba(255, 255, 255, 0.18);
+        border: 1px solid var(--seal-border);
         border-radius: 50%;
         background: var(--accent);
-        box-shadow: 0 16px 46px rgba(139, 108, 255, 0.34);
+        box-shadow: 0 16px 46px var(--seal-shadow);
         font-size: 36px;
       }
 
@@ -280,12 +341,12 @@
       .primary-button {
         border: 0;
         background: var(--accent);
-        color: #fff;
+        color: var(--on-accent);
       }
 
       .secondary-button {
         border: 1px solid var(--stroke);
-        background: rgba(28, 28, 33, 0.78);
+        background: var(--glass);
         color: var(--text);
       }
 
@@ -395,7 +456,7 @@
       }
 
       #error-message {
-        color: #d7d3cd;
+        color: var(--error-text);
         font-size: 14px;
         line-height: 1.45;
       }
@@ -422,7 +483,7 @@
         padding: 11px 16px;
         border: 1px solid var(--stroke);
         border-radius: 999px;
-        background: rgba(31, 31, 36, 0.96);
+        background: var(--toast-bg);
         box-shadow: 0 12px 36px var(--shadow);
         opacity: 0;
         pointer-events: none;
@@ -454,7 +515,7 @@
         position: absolute;
         inset: 0;
         border: 0;
-        background: rgba(0, 0, 0, 0.91);
+        background: var(--modal-backdrop);
       }
 
       #preview-image {
@@ -497,8 +558,8 @@
         border: 1px solid var(--stroke);
         border-bottom: 0;
         border-radius: 28px 28px 0 0;
-        background: #121216;
-        box-shadow: 0 -24px 80px rgba(0, 0, 0, 0.52);
+        background: var(--admin-bg);
+        box-shadow: 0 -24px 80px var(--admin-shadow);
       }
 
       .admin-header {
@@ -521,7 +582,7 @@
         aspect-ratio: 1.62;
         overflow: hidden;
         place-items: center;
-        border: 1px dashed rgba(255, 255, 255, 0.2);
+        border: 1px dashed var(--preview-border);
         border-radius: 20px;
         background: var(--surface-solid);
       }
@@ -556,7 +617,7 @@
       }
 
       .field-label {
-        color: #dad6d0;
+        color: var(--field-label);
         font-size: 13px;
         font-weight: 650;
       }
@@ -587,7 +648,6 @@
       }
 
       #upload-form input[type='date'] {
-        color-scheme: dark;
         -webkit-text-fill-color: var(--text);
         opacity: 1;
       }
