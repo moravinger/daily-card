@@ -17,6 +17,7 @@ export function jsonResponse(
   request: Request,
   body: unknown,
   status = 200,
+  extraHeaders: Record<string, string> = {},
 ) {
   return new Response(JSON.stringify(body), {
     status,
@@ -24,6 +25,7 @@ export function jsonResponse(
       ...corsHeaders(request),
       'Content-Type': 'application/json',
       'Cache-Control': 'no-store',
+      ...extraHeaders,
     },
   })
 }

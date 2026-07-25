@@ -34,13 +34,21 @@ Deno.serve(async (request) => {
     const supabase = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     })
-    const { error } = await supabase
-      .from('subscribers')
-      .upsert({ user_id: userId }, { onConflict: 'user_id', ignoreDuplicates: true })
+    const { data: accepted, error } = await supabase
+      .rpc('subscribe_user_rate_limited', { request_user_id: userId })
 
     if (error) {
       console.error('Failed to subscribe user:', error)
       return jsonResponse(request, { error: 'Failed to subscribe user' }, 500)
+    }
+
+    if (!accepted) {
+      return jsonResponse(
+        request,
+        { error: 'Too many requests' },
+        429,
+        { 'Retry-After': '30' },
+      )
     }
 
     return jsonResponse(request, { subscribed: true })

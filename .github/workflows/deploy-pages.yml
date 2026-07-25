@@ -31,10 +31,9 @@ jobs:
       - run: npm ci
       - run: npm run build
         env:
-          # These are public browser configuration values, not server secrets.
-          VITE_SUPABASE_URL: https://pibalfitreacyjfamhnq.supabase.co
-          VITE_SUPABASE_ANON_KEY: sb_publishable_-k5oZbJ3McpSo-qCaGPg7w_QSaJ_mdt
-          VITE_ADMIN_ID: "41894118"
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_ADMIN_ID: ${{ vars.VITE_ADMIN_ID }}
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

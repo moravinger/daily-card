@@ -24,6 +24,10 @@ npm run check
 npm audit --audit-level=high
 ```
 
+Telegram Web App SDK подключён с SRI-хешем. При официальном обновлении SDK
+скачайте `https://telegram.org/js/telegram-web-app.js`, проверьте изменения и
+обновите `sha384` в `index.html`; до этого браузер не исполнит изменённый файл.
+
 ## Supabase
 
 Примените миграции и настройте серверные секреты:
