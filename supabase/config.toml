@@ -1,0 +1,2 @@
+[functions.subscribe-user]
+verify_jwt = false
