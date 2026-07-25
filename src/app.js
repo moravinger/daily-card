@@ -1,8 +1,8 @@
 import {
   getUserId,
+  initAppTheme,
   initTelegramWebApp,
   isAdmin,
-  tgVersionAtLeast,
 } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
 import { supabase } from './config.js';
@@ -331,9 +331,10 @@ function handleVisibilityChange() {
 
 function initApp() {
   const tg = initTelegramWebApp();
-  if (tg && tgVersionAtLeast('6.1')) {
-    tg.setHeaderColor('#0b0b0d');
-  }
+  const themePreview = import.meta.env.DEV
+    ? new window.URLSearchParams(window.location.search).get('theme')
+    : null;
+  initAppTheme(tg, { preferredTheme: themePreview });
 
   void subscribeUser();
   initCardControls();
