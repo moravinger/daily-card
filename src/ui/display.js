@@ -1,4 +1,5 @@
 import { hapticFeedback } from '../utils/telegram.js';
+import { withCacheBuster } from '../utils/url.js';
 
 /**
  * Показать спиннер загрузки
@@ -42,8 +43,7 @@ export function renderCard(imageUrl) {
   }
 
   if (cardImage && imageUrl) {
-    const cacheBuster = `?t=${Date.now()}`
-    cardImage.src = imageUrl + cacheBuster;
+    cardImage.src = withCacheBuster(imageUrl, Date.now(), window.location.href);
     cardImage.style.opacity = '0';
 
     cardImage.onload = () => {

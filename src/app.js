@@ -10,18 +10,7 @@ import {
   renderError,
 } from './ui/display.js';
 import { initAdminPanel, setMinDate } from './ui/admin.js';
-
-/**
- * Получить текущую дату в UTC
- * @returns {string} - YYYY-MM-DD
- */
-function getTodayUTC() {
-  const now = new Date();
-  const year = now.getUTCFullYear();
-  const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-  const date = String(now.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${date}`;
-}
+import { getTodayUTC } from './utils/date.js';
 
 /**
  * Загрузить и отобразить карточку
@@ -41,7 +30,7 @@ export async function loadCard() {
     }
   } catch (error) {
     console.error('Error loading card:', error);
-    renderError(`Ошибка: ${error.message}`);
+    renderError('Не удалось загрузить карточку. Проверьте соединение и попробуйте ещё раз.');
     renderFallback();
   } finally {
     hideLoading();
@@ -52,14 +41,16 @@ export async function loadCard() {
  * Подписать пользователя на уведомления
  */
 async function subscribeUser() {
-  const initData = window.Telegram?.WebApp?.initData
-  if (!initData) return
+  try {
+    const initData = window.Telegram?.WebApp?.initData
+    if (!initData) return
 
-  const { error } = await supabase.functions.invoke('subscribe-user', {
-    body: { initData },
-  })
+    const { error } = await supabase.functions.invoke('subscribe-user', {
+      body: { initData },
+    })
 
-  if (error) {
+    if (error) console.warn('Subscribe failed:', error)
+  } catch (error) {
     console.warn('Subscribe failed:', error)
   }
 }
@@ -73,9 +64,9 @@ function initApp() {
     tg.setHeaderColor('#0d0d0d');
   }
 
-  subscribeUser();
+  void subscribeUser();
 
-  loadCard();
+  void loadCard();
 
   // Показываем админ-панель, если пользователь админ
   if (isAdmin()) {
@@ -99,7 +90,7 @@ function initApp() {
   }
 
   // Обновляем карточку каждый час
-  setInterval(loadCard, 60 * 60 * 1000);
+  setInterval(() => void loadCard(), 60 * 60 * 1000);
 }
 
 // Запускаем при готовности DOM

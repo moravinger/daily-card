@@ -1,2 +1,5 @@
 [functions.subscribe-user]
 verify_jwt = false
+
+[functions.upload-card]
+verify_jwt = false

@@ -1,5 +1,6 @@
 import { showAlert } from '../utils/telegram.js';
 import { supabase } from '../config.js';
+import { getTodayLocal } from '../utils/date.js';
 
 function getInitData() {
   return window.Telegram?.WebApp?.initData || ''
@@ -7,7 +8,9 @@ function getInitData() {
 
 function getFileValidationError(file) {
   if (file.size > 5 * 1024 * 1024) return 'Файл слишком большой (максимум 5 МБ)'
-  if (!file.type.startsWith('image/')) return 'Это не изображение'
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+    return 'Поддерживаются только JPEG, PNG и WebP'
+  }
   return null
 }
 
@@ -23,8 +26,11 @@ async function handleFormSubmit(e) {
   const fileInput = document.getElementById('file-input')
   const dateInput = document.getElementById('date-input')
   const statusEl = document.getElementById('upload-status')
+  const submitButton = e.submitter
 
-  if (!fileInput.files[0]) {
+  if (!fileInput || !dateInput || !statusEl) return
+
+  if (!fileInput.files?.[0]) {
     showAlert('Выбери картинку')
     return
   }
@@ -52,34 +58,18 @@ async function handleFormSubmit(e) {
   statusEl.textContent = 'Загружаю...'
   statusEl.style.display = 'block'
   statusEl.style.color = '#999'
+  if (submitButton) submitButton.disabled = true
 
   try {
-    const ext = file.name.split('.').pop() || 'jpg'
-    const fileName = `card_${date}_${Date.now()}.${ext}`
+    const formData = new FormData()
+    formData.set('file', file)
+    formData.set('date', date)
+    formData.set('initData', initData)
 
-    const { error: uploadErr } = await supabase.storage
-      .from('card-images')
-      .upload(fileName, file)
-    if (uploadErr) throw new Error(`Storage: ${uploadErr.message}`)
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('card-images')
-      .getPublicUrl(fileName)
-
-    const res = await fetch(
-      'https://pibalfitreacyjfamhnq.supabase.co/functions/v1/upload-card',
-      {
-        method: 'POST',
-        headers: { 'apikey': window.CONFIG?.SUPABASE_ANON_KEY || '' },
-        body: JSON.stringify({ date, imageUrl: publicUrl, initData }),
-      },
-    )
-
-    const text = await res.text()
-    let result
-    try { result = JSON.parse(text) } catch { throw new Error(text.substring(0, 200)) }
-
-    if (!res.ok) throw new Error(result.error || 'Ошибка загрузки')
+    const { error } = await supabase.functions.invoke('upload-card', {
+      body: formData,
+    })
+    if (error) throw error
 
     statusEl.textContent = '✅ Карточка загружена!'
     statusEl.style.color = '#4CAF50'
@@ -90,14 +80,15 @@ async function handleFormSubmit(e) {
     setTimeout(() => { window.location.reload() }, 1000)
   } catch (error) {
     console.error('Upload error:', error)
-    statusEl.textContent = `❌ Ошибка: ${error.message}`
+    statusEl.textContent = '❌ Не удалось загрузить карточку. Попробуйте ещё раз.'
     statusEl.style.color = '#f44336'
+  } finally {
+    if (submitButton) submitButton.disabled = false
   }
 }
 
 export function setMinDate() {
   const dateInput = document.getElementById('date-input')
   if (!dateInput) return
-  const today = new Date()
-  dateInput.min = new Date(today.getTime() - today.getTimezoneOffset() * 6e4).toISOString().split('T')[0]
+  dateInput.min = getTodayLocal()
 }
