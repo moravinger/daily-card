@@ -90,5 +90,7 @@ async function handleFormSubmit(e) {
 export function setMinDate() {
   const dateInput = document.getElementById('date-input')
   if (!dateInput) return
-  dateInput.min = getTodayLocal()
+  const today = getTodayLocal()
+  dateInput.min = today
+  if (!dateInput.value) dateInput.value = today
 }
