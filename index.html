@@ -413,6 +413,29 @@
         cursor: pointer;
       }
 
+      #upload-form input[type='date'] {
+        width: 100%;
+        min-height: 44px;
+        color: #fff;
+        color-scheme: dark;
+        -webkit-text-fill-color: #fff;
+        opacity: 1;
+      }
+
+      #upload-form input[type='date']::-webkit-date-and-time-value,
+      #upload-form input[type='date']::-webkit-datetime-edit {
+        color: #fff;
+        -webkit-text-fill-color: #fff;
+        text-align: left;
+        opacity: 1;
+      }
+
+      #upload-form input[type='date']::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        filter: invert(1);
+        opacity: 0.85;
+      }
+
       #upload-form button {
         background: #007AFF;
         border: none;
