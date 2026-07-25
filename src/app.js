@@ -1,4 +1,4 @@
-import { initTelegramWebApp, getUserId, isAdmin, tgVersionAtLeast } from './utils/telegram.js';
+import { initTelegramWebApp, isAdmin, tgVersionAtLeast } from './utils/telegram.js';
 import { getCardByDate } from './api/supabase.js';
 import { supabase } from './config.js';
 import { showLoading, hideLoading, renderCard, renderFallback, renderError } from './ui/display.js';
@@ -44,10 +44,14 @@ export async function loadCard() {
  * Подписать пользователя на уведомления
  */
 async function subscribeUser() {
-  const userId = getUserId()
-  if (!userId) return
-  const { error } = await supabase.from('subscribers').insert({ user_id: userId })
-  if (error && error.code !== '23505') {
+  const initData = window.Telegram?.WebApp?.initData
+  if (!initData) return
+
+  const { error } = await supabase.functions.invoke('subscribe-user', {
+    body: { initData },
+  })
+
+  if (error) {
     console.warn('Subscribe failed:', error)
   }
 }
